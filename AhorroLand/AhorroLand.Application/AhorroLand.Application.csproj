@@ -11,4 +11,8 @@
     <ProjectReference Include="..\AhorroLand.Shared.Application\AhorroLand.Shared.Application.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Features\Personas\Search\" />
+  </ItemGroup>
+
 </Project>

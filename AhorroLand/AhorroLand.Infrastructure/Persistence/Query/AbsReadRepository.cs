@@ -18,7 +18,7 @@ namespace AhorroLand.Infrastructure.Persistence.Query
   where T : AbsEntity
     where TReadModel : class
     {
-   protected readonly IDbConnectionFactory _dbConnectionFactory;
+        protected readonly IDbConnectionFactory _dbConnectionFactory;
         protected readonly string _tableName;
         private readonly IDistributedCache? _cache;
 
@@ -26,13 +26,13 @@ namespace AhorroLand.Infrastructure.Persistence.Query
    IDbConnectionFactory dbConnectionFactory,
     string tableName,
    IDistributedCache? cache = null)
-{
+        {
             _dbConnectionFactory = dbConnectionFactory;
-     _tableName = tableName;
-  _cache = cache;
+            _tableName = tableName;
+            _cache = cache;
         }
 
-   #region Query Builders - Override para personalizar SQL
+        #region Query Builders - Override para personalizar SQL
 
         /// <summary>
         /// 🔥 OVERRIDE REQUERIDO EN LA MAYORÍA DE CASOS: Personaliza el query de GetById.
@@ -136,96 +136,96 @@ namespace AhorroLand.Infrastructure.Persistence.Query
         /// Por defecto solo permite ordenar por fecha_creacion.
         /// DEBES SOBRESCRIBIR para permitir ordenamiento por otras columnas.
         /// </summary>
-   protected virtual Dictionary<string, string> GetSortableColumns()
+        protected virtual Dictionary<string, string> GetSortableColumns()
         {
-   return new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+            return new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
   {
         { "FechaCreacion", "fecha_creacion" },
      { "Fecha", "fecha_creacion" }
 };
-  }
+        }
 
-   /// <summary>
+        /// <summary>
         /// 🔥 NUEVO: Devuelve las columnas de texto sobre las cuales se puede realizar búsqueda con LIKE.
-      /// Por defecto no hay columnas de búsqueda.
+        /// Por defecto no hay columnas de búsqueda.
         /// DEBES SOBRESCRIBIR para habilitar búsqueda por columnas de texto (nombre, descripcion, etc.).
         /// </summary>
         protected virtual List<string> GetSearchableColumns()
         {
-     return new List<string>(); // Sin búsqueda por defecto
- }
-
-  /// <summary>
-        /// 🔥 NUEVO: Devuelve las columnas numéricas sobre las cuales se puede realizar búsqueda con comparación exacta.
-        /// Por defecto no hay columnas numéricas de búsqueda.
-   /// DEBES SOBRESCRIBIR para habilitar búsqueda por columnas numéricas (importe, cantidad, etc.).
-  /// </summary>
-        protected virtual List<string> GetNumericSearchableColumns()
-        {
-          return new List<string>(); // Sin búsqueda numérica por defecto
+            return new List<string>(); // Sin búsqueda por defecto
         }
 
         /// <summary>
-     /// 🔥 NUEVO: Devuelve las columnas de fecha sobre las cuales se puede realizar búsqueda con comparación de fecha.
+        /// 🔥 NUEVO: Devuelve las columnas numéricas sobre las cuales se puede realizar búsqueda con comparación exacta.
+        /// Por defecto no hay columnas numéricas de búsqueda.
+        /// DEBES SOBRESCRIBIR para habilitar búsqueda por columnas numéricas (importe, cantidad, etc.).
+        /// </summary>
+        protected virtual List<string> GetNumericSearchableColumns()
+        {
+            return new List<string>(); // Sin búsqueda numérica por defecto
+        }
+
+        /// <summary>
+        /// 🔥 NUEVO: Devuelve las columnas de fecha sobre las cuales se puede realizar búsqueda con comparación de fecha.
         /// Por defecto no hay columnas de fecha de búsqueda.
         /// DEBES SOBRESCRIBIR para habilitar búsqueda por columnas de fecha (fecha, fecha_registro, etc.).
         /// </summary>
         protected virtual List<string> GetDateSearchableColumns()
- {
+        {
             return new List<string>(); // Sin búsqueda por fecha por defecto
         }
 
         /// <summary>
-     /// 🔥 MEJORADO: Construye la cláusula WHERE para la búsqueda con soporte para texto, números y fechas.
-  /// </summary>
-   protected virtual string BuildSearchWhereClause(string searchTerm, DynamicParameters parameters)
-      {
+        /// 🔥 MEJORADO: Construye la cláusula WHERE para la búsqueda con soporte para texto, números y fechas.
+        /// </summary>
+        protected virtual string BuildSearchWhereClause(string searchTerm, DynamicParameters parameters)
+        {
             if (string.IsNullOrWhiteSpace(searchTerm))
-      {
-          return string.Empty;
- }
+            {
+                return string.Empty;
+            }
 
             var conditions = new List<string>();
 
-        // 1. Búsqueda en columnas de TEXTO (usa LIKE)
+            // 1. Búsqueda en columnas de TEXTO (usa LIKE)
             var textColumns = GetSearchableColumns();
-      if (textColumns.Count > 0)
+            if (textColumns.Count > 0)
             {
-       var textConditions = textColumns.Select(col => $"{col} LIKE @SearchTerm");
-     conditions.AddRange(textConditions);
-            parameters.Add("SearchTerm", $"%{searchTerm}%");
-   }
+                var textConditions = textColumns.Select(col => $"{col} LIKE @SearchTerm");
+                conditions.AddRange(textConditions);
+                parameters.Add("SearchTerm", $"%{searchTerm}%");
+            }
 
             // 2. Búsqueda en columnas NUMÉRICAS (usa comparación exacta o conversión a string)
             var numericColumns = GetNumericSearchableColumns();
-     if (numericColumns.Count > 0 && decimal.TryParse(searchTerm, out var numericValue))
-      {
-         foreach (var col in numericColumns)
-     {
-            conditions.Add($"{col} = @NumericSearchTerm");
-      }
-    parameters.Add("NumericSearchTerm", numericValue);
-      }
+            if (numericColumns.Count > 0 && decimal.TryParse(searchTerm, out var numericValue))
+            {
+                foreach (var col in numericColumns)
+                {
+                    conditions.Add($"{col} = @NumericSearchTerm");
+                }
+                parameters.Add("NumericSearchTerm", numericValue);
+            }
 
             // 3. Búsqueda en columnas de FECHA (usa DATE() para buscar por día completo)
-     var dateColumns = GetDateSearchableColumns();
+            var dateColumns = GetDateSearchableColumns();
             if (dateColumns.Count > 0 && DateTime.TryParse(searchTerm, out var dateValue))
             {
- foreach (var col in dateColumns)
-    {
-          // Buscar por fecha exacta (ignora hora)
-conditions.Add($"DATE({col}) = @DateSearchTerm");
-       }
-           parameters.Add("DateSearchTerm", dateValue.Date);
-         }
-    // También permite buscar por formato de texto en fecha (ej: "2024", "2024-01", "01-15")
-        else if (dateColumns.Count > 0)
-  {
-    foreach (var col in dateColumns)
-              {
-    conditions.Add($"DATE_FORMAT({col}, '%Y-%m-%d') LIKE @DateTextSearchTerm");
-      }
-     parameters.Add("DateTextSearchTerm", $"%{searchTerm}%");
+                foreach (var col in dateColumns)
+                {
+                    // Buscar por fecha exacta (ignora hora)
+                    conditions.Add($"DATE({col}) = @DateSearchTerm");
+                }
+                parameters.Add("DateSearchTerm", dateValue.Date);
+            }
+            // También permite buscar por formato de texto en fecha (ej: "2024", "2024-01", "01-15")
+            else if (dateColumns.Count > 0)
+            {
+                foreach (var col in dateColumns)
+                {
+                    conditions.Add($"DATE_FORMAT({col}, '%Y-%m-%d') LIKE @DateTextSearchTerm");
+                }
+                parameters.Add("DateTextSearchTerm", $"%{searchTerm}%");
             }
 
             return conditions.Count > 0 ? $"({string.Join(" OR ", conditions)})" : string.Empty;
@@ -236,24 +236,24 @@ conditions.Add($"DATE({col}) = @DateSearchTerm");
         /// </summary>
         protected virtual string BuildOrderByClause(string? sortColumn, string? sortOrder)
         {
-    var sortableColumns = GetSortableColumns();
+            var sortableColumns = GetSortableColumns();
 
             // Si no se especifica columna o no es válida, usar el orden por defecto
- if (string.IsNullOrWhiteSpace(sortColumn) ||
-     !sortableColumns.TryGetValue(sortColumn, out var dbColumn))
-     {
-     return GetDefaultOrderBy();
-  }
+            if (string.IsNullOrWhiteSpace(sortColumn) ||
+                !sortableColumns.TryGetValue(sortColumn, out var dbColumn))
+            {
+                return GetDefaultOrderBy();
+            }
 
- // Validar sortOrder (solo 'asc' o 'desc')
+            // Validar sortOrder (solo 'asc' o 'desc')
             var order = string.Equals(sortOrder, "asc", StringComparison.OrdinalIgnoreCase) ? "ASC" : "DESC";
 
             return $"ORDER BY {dbColumn} {order}";
         }
 
-      #endregion
+        #endregion
 
-  #region IReadRepositoryWithDto Implementation - Métodos optimizados con DTOs
+        #region IReadRepositoryWithDto Implementation - Métodos optimizados con DTOs
 
         /// <summary>
         /// 🚀 OPTIMIZADO: Obtiene el DTO con cache opcional.
@@ -454,6 +454,83 @@ conditions.Add($"DATE({col}) = @DateSearchTerm");
 
             return new PagedList<TReadModel>(items, page, pageSize, total);
         }
+
+        /// <summary>
+        /// 🚀 NUEVO: Búsqueda rápida para autocomplete (ultra-optimizada).
+        /// Limita resultados y usa solo columnas necesarias para máxima velocidad.
+        /// </summary>
+        public virtual async Task<IEnumerable<TReadModel>> SearchForAutocompleteAsync(
+            Guid usuarioId,
+      string searchTerm,
+            int limit = 10,
+       CancellationToken cancellationToken = default)
+        {
+     using var connection = _dbConnectionFactory.CreateConnection();
+
+            var baseQuery = BuildGetPagedQuery();
+    var userIdColumn = GetUserIdColumn();
+
+       var parameters = new DynamicParameters();
+ parameters.Add("usuarioId", usuarioId);
+      parameters.Add("limit", limit);
+
+   // Construir cláusula WHERE
+            var whereClauses = new List<string> { $"{userIdColumn} = @usuarioId" };
+
+            var searchWhereClause = BuildSearchWhereClause(searchTerm ?? string.Empty, parameters);
+       if (!string.IsNullOrWhiteSpace(searchWhereClause))
+     {
+           whereClauses.Add(searchWhereClause);
+            }
+
+            var whereClause = $"WHERE {string.Join(" AND ", whereClauses)}";
+
+       // 🚀 OPTIMIZACIÓN: Usar el ORDER BY por defecto + LIMIT para resultados rápidos
+        var orderBy = GetDefaultOrderBy();
+
+            var sql = $@"
+{baseQuery}
+        {whereClause}
+        {orderBy}
+        LIMIT @limit";
+
+     return await connection.QueryAsync<TReadModel>(
+     new CommandDefinition(sql, parameters, cancellationToken: cancellationToken));
+        }
+
+        /// <summary>
+     /// 🚀 NUEVO: Obtiene los elementos más recientes de un usuario.
+        /// Ultra-rápido: usa índice en (usuario_id, fecha_creacion).
+        /// </summary>
+public virtual async Task<IEnumerable<TReadModel>> GetRecentAsync(
+    Guid usuarioId,
+       int limit = 5,
+ CancellationToken cancellationToken = default)
+        {
+   using var connection = _dbConnectionFactory.CreateConnection();
+
+            var baseQuery = BuildGetPagedQuery();
+       var userIdColumn = GetUserIdColumn();
+      var alias = GetTableAlias();
+
+    var parameters = new DynamicParameters();
+      parameters.Add("usuarioId", usuarioId);
+        parameters.Add("limit", limit);
+
+        // 🔥 OPTIMIZACIÓN: ORDER BY con alias de tabla para evitar ambigüedad
+        var orderByColumn = string.IsNullOrEmpty(alias) 
+      ? "fecha_creacion" 
+ : $"{alias}.fecha_creacion";
+
+    var sql = $@"
+{baseQuery}
+WHERE {userIdColumn} = @usuarioId
+ORDER BY {orderByColumn} DESC
+LIMIT @limit";
+
+      return await connection.QueryAsync<TReadModel>(
+   new CommandDefinition(sql, parameters, cancellationToken: cancellationToken));
+    }
 
         #endregion
     }

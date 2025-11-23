@@ -6,6 +6,7 @@
     public record PersonaDto(
         Guid Id,
         string Nombre,
-        Guid UsuarioId
+        Guid UsuarioId,
+        DateTime FechaCreacion
     );
 }

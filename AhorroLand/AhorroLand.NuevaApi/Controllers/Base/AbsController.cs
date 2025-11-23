@@ -1,5 +1,7 @@
 ﻿using AhorroLand.NuevaApi.Extensions;
+using AhorroLand.NuevaApi.Models.Responses;
 using AhorroLand.Shared.Domain.Abstractions.Results;
+using AhorroLand.Shared.Domain.Results;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -17,34 +19,79 @@ public abstract class AbsController : ControllerBase
         _sender = sender;
     }
 
+    /// <summary>
+    /// Maneja el resultado y lo envuelve en ApiResponse
+    /// </summary>
     protected IActionResult HandleResult<T>(Result<T> result)
     {
         if (result.IsSuccess)
         {
-            return Ok(result.Value);
+            var response = ApiResponse<T>.Ok(result.Value);
+            return Ok(response);
         }
 
         return HandleFailure(result.Error);
     }
 
-    // Sobrecarga para Resultados sin valor (como en Update o Delete)
+    /// <summary>
+    /// Maneja resultados sin valor (Update, Delete)
+    /// </summary>
     protected IActionResult HandleResult(Result result)
     {
         if (result.IsSuccess)
         {
-            // Un 'Update' o 'Delete' exitoso no devuelve contenido
             return NoContent();
         }
 
         return HandleFailure(result.Error);
     }
 
-    // Método para manejar un 'Create' exitoso (devuelve 201 Created)
+    /// <summary>
+    /// Maneja resultado de creación (devuelve 201 Created con ApiResponse)
+    /// </summary>
     protected IActionResult HandleResultForCreation<T>(Result<T> result, string actionName, object routeValues)
     {
         if (result.IsSuccess)
         {
-            return CreatedAtAction(actionName, routeValues, result.Value);
+            var response = ApiResponse<T>.Ok(result.Value, "Recurso creado exitosamente");
+            return CreatedAtAction(actionName, routeValues, response);
+        }
+
+        return HandleFailure(result.Error);
+    }
+
+    /// <summary>
+    /// 🆕 Maneja resultado paginado y lo envuelve en ApiResponse con PaginatedResponse
+    /// </summary>
+    protected IActionResult HandlePagedResult<T>(Result<PagedList<T>> result)
+    {
+        if (result.IsSuccess)
+        {
+            var pagedData = result.Value;
+            var paginatedResponse = new PaginatedResponse<T>(
+                pagedData.Items,
+                pagedData.TotalCount,
+                pagedData.Page,
+                pagedData.PageSize
+            );
+
+            var response = ApiResponse<PaginatedResponse<T>>.Ok(paginatedResponse);
+            return Ok(response);
+        }
+
+        return HandleFailure(result.Error);
+    }
+
+    /// <summary>
+    /// 🆕 Maneja lista simple (search, recent) y la envuelve en ApiResponse con ListResponse
+    /// </summary>
+    protected IActionResult HandleListResult<T>(Result<IEnumerable<T>> result, string? message = null)
+    {
+        if (result.IsSuccess)
+        {
+            var listResponse = new ListResponse<T>(result.Value);
+            var response = ApiResponse<ListResponse<T>>.Ok(listResponse, message);
+            return Ok(response);
         }
 
         return HandleFailure(result.Error);

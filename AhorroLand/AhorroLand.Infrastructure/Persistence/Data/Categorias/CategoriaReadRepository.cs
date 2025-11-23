@@ -15,100 +15,118 @@ namespace AhorroLand.Infrastructure.Persistence.Data.Categorias
 
         /// <summary>
         /// 🔥 Query específico para Categoría con todas sus columnas.
+        /// IMPORTANTE: La tabla categorias usa usuario_id (sin prefijo id_)
         /// </summary>
- protected override string BuildGetByIdQuery()
+        protected override string BuildGetByIdQuery()
         {
-       return @"
-            SELECT 
-          id as Id,
-nombre as Nombre,
-  id_usuario as UsuarioId,
+            return @"
+         SELECT 
+     id as Id,
+          nombre as Nombre,
+ usuario_id as UsuarioId,
        fecha_creacion as FechaCreacion
             FROM categorias 
-            WHERE id = @id";
+   WHERE id = @id";
         }
 
-  /// <summary>
+        /// <summary>
         /// 🔥 Query para obtener todas las categorías.
-   /// </summary>
- protected override string BuildGetAllQuery()
+        /// </summary>
+        protected override string BuildGetAllQuery()
         {
-   return @"
+            return @"
    SELECT 
      id as Id,
       nombre as Nombre,
-       id_usuario as UsuarioId,
+     usuario_id as UsuarioId,
        fecha_creacion as FechaCreacion
-            FROM categorias";
-     }
+     FROM categorias";
+        }
+
+        /// <summary>
+        /// 🔥 Query para paginación (debe ser igual a BuildGetAllQuery).
+        /// </summary>
+        protected override string BuildGetPagedQuery()
+        {
+    return BuildGetAllQuery();
+   }
+
+        /// <summary>
+ /// 🔥 Columna WHERE para filtrar por usuario.
+    /// IMPORTANTE: Usa usuario_id (sin prefijo id_)
+        /// </summary>
+        protected override string GetUserIdColumn()
+        {
+        return "usuario_id";
+        }
 
         /// <summary>
         /// 🔥 ORDER BY por nombre ascendente.
-    /// </summary>
-      protected override string GetDefaultOrderBy()
- {
-    return "ORDER BY nombre ASC";
-   }
-
-        /// <summary>
-        /// 🔥 NUEVO: Define las columnas por las que se puede ordenar.
         /// </summary>
-        protected override Dictionary<string, string> GetSortableColumns()
+        protected override string GetDefaultOrderBy()
         {
-     return new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
-            {
+     return "ORDER BY nombre ASC";
+     }
+
+     /// <summary>
+      /// 🔥 NUEVO: Define las columnas por las que se puede ordenar.
+        /// </summary>
+     protected override Dictionary<string, string> GetSortableColumns()
+        {
+         return new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+ {
       { "Nombre", "nombre" },
   { "FechaCreacion", "fecha_creacion" }
-       };
-   }
+  };
+      }
 
-   /// <summary>
+      /// <summary>
         /// 🔥 NUEVO: Define las columnas en las que se puede buscar.
         /// </summary>
-        protected override List<string> GetSearchableColumns()
-     {
-   return new List<string>
+      protected override List<string> GetSearchableColumns()
+   {
+        return new List<string>
  {
-       "nombre"
+    "nombre"
  };
-        }
+     }
 
-     public async Task<bool> ExistsWithSameNameAsync(Nombre nombre, UsuarioId usuarioId, CancellationToken cancellationToken = default)
+    public async Task<bool> ExistsWithSameNameAsync(Nombre nombre, UsuarioId usuarioId, CancellationToken cancellationToken = default)
         {
-         using var connection = _dbConnectionFactory.CreateConnection();
+          using var connection = _dbConnectionFactory.CreateConnection();
 
   const string sql = @"
         SELECT EXISTS(
       SELECT 1 
    FROM categorias 
-     WHERE nombre = @Nombre AND id_usuario = @UsuarioId
-      ) as Exists";
+     WHERE nombre = @Nombre AND usuario_id = @UsuarioId
+   ) as Exists";
 
- var exists = await connection.ExecuteScalarAsync<bool>(
-     new CommandDefinition(sql,
-     new { Nombre = nombre.Value, UsuarioId = usuarioId.Value },
-         cancellationToken: cancellationToken));
+     var exists = await connection.ExecuteScalarAsync<bool>(
+       new CommandDefinition(sql,
+      new { Nombre = nombre.Value, UsuarioId = usuarioId.Value },
+        cancellationToken: cancellationToken));
 
-return exists;
+   return exists;
         }
 
-    public async Task<bool> ExistsWithSameNameExceptAsync(Nombre nombre, UsuarioId usuarioId, Guid excludeId, CancellationToken cancellationToken = default)
- {
-   using var connection = _dbConnectionFactory.CreateConnection();
+     public async Task<bool> ExistsWithSameNameExceptAsync(Nombre nombre, UsuarioId usuarioId, Guid excludeId, CancellationToken cancellationToken = default)
+        {
+        using var connection = _dbConnectionFactory.CreateConnection();
 
-            const string sql = @"
+ const string sql = @"
    SELECT EXISTS(
     SELECT 1 
         FROM categorias 
-      WHERE nombre = @Nombre AND id_usuario = @UsuarioId AND id != @ExcludeId
-            ) as Exists";
+   WHERE nombre = @Nombre AND usuario_id = @UsuarioId AND id != @ExcludeId
+      ) as Exists";
 
-            var exists = await connection.ExecuteScalarAsync<bool>(
-  new CommandDefinition(sql,
-       new { Nombre = nombre.Value, UsuarioId = usuarioId.Value, ExcludeId = excludeId },
-  cancellationToken: cancellationToken));
+        var exists = await connection.ExecuteScalarAsync<bool>(
+ new CommandDefinition(sql,
+     new { Nombre = nombre.Value, UsuarioId = usuarioId.Value, ExcludeId = excludeId },
+     cancellationToken: cancellationToken));
 
-         return exists;
-   }
+            return exists;
+      }
     }
 }

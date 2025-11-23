@@ -40,5 +40,34 @@ namespace AhorroLand.Shared.Domain.Interfaces.Repositories
             string? sortColumn = null,
             string? sortOrder = null,
             CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// 🚀 NUEVO: Búsqueda rápida para autocomplete (limitada a pocos resultados).
+        /// Ideal para selectores asíncronos que necesitan respuestas ultra-rápidas (<10ms).
+        /// </summary>
+        /// <param name="usuarioId">ID del usuario propietario</param>
+        /// <param name="searchTerm">Término de búsqueda</param>
+        /// <param name="limit">Número máximo de resultados (por defecto 10)</param>
+        /// <param name="cancellationToken">Token de cancelación</param>
+        /// <returns>Lista limitada de DTOs que coinciden con la búsqueda</returns>
+        Task<IEnumerable<TDto>> SearchForAutocompleteAsync(
+            Guid usuarioId,
+            string searchTerm,
+            int limit = 10,
+            CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// 🚀 NUEVO: Obtiene los elementos más recientes de un usuario.
+        /// Ideal para pre-cargar selectores con los elementos usados recientemente.
+        /// Ordenado por fecha_creacion DESC.
+        /// </summary>
+        /// <param name="usuarioId">ID del usuario propietario</param>
+        /// <param name="limit">Número máximo de resultados (por defecto 5)</param>
+        /// <param name="cancellationToken">Token de cancelación</param>
+        /// <returns>Lista de los elementos más recientes</returns>
+        Task<IEnumerable<TDto>> GetRecentAsync(
+            Guid usuarioId,
+            int limit = 5,
+            CancellationToken cancellationToken = default);
     }
 }

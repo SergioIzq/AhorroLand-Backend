@@ -18,15 +18,15 @@ namespace AhorroLand.Infrastructure.Persistence.Data.Clientes
         }
 
         /// <summary>
-      /// 🔥 OPTIMIZADO: Query específico para Cliente con las columnas correctas.
+        /// 🔥 OPTIMIZADO: Query específico para Cliente con las columnas correctas.
         /// </summary>
-  protected override string BuildGetByIdQuery()
-     {
-   return @"
+        protected override string BuildGetByIdQuery()
+        {
+            return @"
        SELECT 
        id as Id,
       nombre as Nombre,
-         usuario_id as UsuarioId
+         id_usuario as UsuarioId
    FROM clientes 
       WHERE id = @id";
         }
@@ -34,110 +34,110 @@ namespace AhorroLand.Infrastructure.Persistence.Data.Clientes
         /// <summary>
         /// 🔥 OPTIMIZADO: Query para obtener todos los clientes.
         /// </summary>
-   protected override string BuildGetAllQuery()
- {
-     return @"
+        protected override string BuildGetAllQuery()
+        {
+            return @"
     SELECT 
           id as Id,
    nombre as Nombre,
-   usuario_id as UsuarioId
+   id_usuario as UsuarioId
            FROM clientes";
-  }
+        }
 
-   /// <summary>
-      /// 🔥 OPTIMIZADO: Query base para paginación (sin ORDER BY).
-     /// El ORDER BY se agrega en cada método según el contexto.
+        /// <summary>
+        /// 🔥 OPTIMIZADO: Query base para paginación (sin ORDER BY).
+        /// El ORDER BY se agrega en cada método según el contexto.
         /// </summary>
         protected override string BuildGetPagedQuery()
-     {
-   return @"
+        {
+            return @"
    SELECT 
        id as Id,
              nombre as Nombre,
-      usuario_id as UsuarioId
+   id_usuario as UsuarioId
    FROM clientes";
-     }
+        }
 
         /// <summary>
         /// 🔥 OPTIMIZADO: Query de conteo.
         /// </summary>
-protected override string BuildCountQuery()
-  {
-       return "SELECT COUNT(*) FROM clientes";
-        }
-
-        /// <summary>
-    /// 🔥 NUEVO: Proporciona el ORDER BY por defecto para paginación sin filtros.
-   /// </summary>
-  protected override string GetDefaultOrderBy()
-   {
-       return "ORDER BY nombre ASC";
-        }
-
-        /// <summary>
-    /// 🔥 NUEVO: Define las columnas por las que se puede ordenar.
-        /// </summary>
-   protected override Dictionary<string, string> GetSortableColumns()
+        protected override string BuildCountQuery()
         {
-    return new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+            return "SELECT COUNT(*) FROM clientes";
+        }
+
+        /// <summary>
+        /// 🔥 NUEVO: Proporciona el ORDER BY por defecto para paginación sin filtros.
+        /// </summary>
+        protected override string GetDefaultOrderBy()
+        {
+            return "ORDER BY nombre ASC";
+        }
+
+        /// <summary>
+        /// 🔥 NUEVO: Define las columnas por las que se puede ordenar.
+        /// </summary>
+        protected override Dictionary<string, string> GetSortableColumns()
+        {
+            return new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
     {
        { "Nombre", "nombre" }
             };
-     }
+        }
 
         /// <summary>
         /// 🔥 NUEVO: Define las columnas en las que se puede buscar.
- /// </summary>
- protected override List<string> GetSearchableColumns()
+        /// </summary>
+        protected override List<string> GetSearchableColumns()
         {
-       return new List<string>
+            return new List<string>
    {
     "nombre"
    };
-   }
+        }
 
-     public async Task<bool> ExistsWithSameNameAsync(Nombre nombre, UsuarioId usuarioId, CancellationToken cancellationToken = default)
-     {
-     using var connection = _dbConnectionFactory.CreateConnection();
+        public async Task<bool> ExistsWithSameNameAsync(Nombre nombre, UsuarioId usuarioId, CancellationToken cancellationToken = default)
+        {
+            using var connection = _dbConnectionFactory.CreateConnection();
 
             // 🚀 OPTIMIZACIÓN: EXISTS es más rápido que COUNT para verificación de existencia
-      const string sql = @"
+            const string sql = @"
        SELECT EXISTS(
       SELECT 1 
        FROM clientes 
-       WHERE nombre = @Nombre AND usuario_id = @UsuarioId
+       WHERE nombre = @Nombre AND id_usuario = @UsuarioId
                 ) as Exists";
 
             // 🔧 OPTIMIZACIÓN: Dapper maneja GUIDs nativamente
-          var exists = await connection.ExecuteScalarAsync<bool>(
-   new CommandDefinition(sql,
-         new { Nombre = nombre.Value, UsuarioId = usuarioId.Value },
-    cancellationToken: cancellationToken));
+            var exists = await connection.ExecuteScalarAsync<bool>(
+     new CommandDefinition(sql,
+           new { Nombre = nombre.Value, UsuarioId = usuarioId.Value },
+      cancellationToken: cancellationToken));
 
-      return exists;
-}
+            return exists;
+        }
 
-public async Task<bool> ExistsWithSameNameExceptAsync(Nombre nombre, UsuarioId usuarioId, Guid excludeId, CancellationToken cancellationToken = default)
-  {
-using var connection = _dbConnectionFactory.CreateConnection();
+        public async Task<bool> ExistsWithSameNameExceptAsync(Nombre nombre, UsuarioId usuarioId, Guid excludeId, CancellationToken cancellationToken = default)
+        {
+            using var connection = _dbConnectionFactory.CreateConnection();
 
-       // 🚀 OPTIMIZACIÓN: EXISTS es más rápido que COUNT
+            // 🚀 OPTIMIZACIÓN: EXISTS es más rápido que COUNT
             const string sql = @"
                 SELECT EXISTS(
              SELECT 1 
    FROM clientes 
-      WHERE nombre = @Nombre 
-AND usuario_id = @UsuarioId 
-       AND id != @ExcludeId
+   WHERE nombre = @Nombre 
+AND id_usuario = @UsuarioId 
+   AND id != @ExcludeId
      ) as Exists";
 
-       // 🔧 OPTIMIZACIÓN: Dapper maneja GUIDs nativamente
-            var exists = await connection.ExecuteScalarAsync<bool>(
+     // 🔧 OPTIMIZACIÓN: Dapper maneja GUIDs nativamente
+     var exists = await connection.ExecuteScalarAsync<bool>(
   new CommandDefinition(sql,
-              new { Nombre = nombre.Value, UsuarioId = usuarioId.Value, ExcludeId = excludeId },
-              cancellationToken: cancellationToken));
+     new { Nombre = nombre.Value, UsuarioId = usuarioId.Value, ExcludeId = excludeId },
+    cancellationToken: cancellationToken));
 
-   return exists;
-    }
+    return exists;
+        }
     }
 }

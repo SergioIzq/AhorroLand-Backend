@@ -20,7 +20,7 @@ namespace AhorroLand.Infrastructure.Persistence.Command.Configurations.Configura
                 .IsRequired();
 
             builder.Property(e => e.UsuarioId)
-                .HasColumnName("usuario_id") // 🔧 FIX: Nombre consistente con queries SQL
+                .HasColumnName("id_usuario") // 🔧 FIX: Nombre consistente con queries SQL
                 .IsRequired();
 
             builder.Property(e => e.FechaCreacion)

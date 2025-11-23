@@ -8,5 +8,6 @@
         public Guid Id { get; init; }
         public required string Nombre { get; init; }
         public Guid UsuarioId { get; init; }
+        public DateTime FechaCreacion { get; init; }
     }
 }

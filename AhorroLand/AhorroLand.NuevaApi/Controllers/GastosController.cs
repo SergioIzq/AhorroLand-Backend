@@ -44,14 +44,13 @@ public class GastosController : AbsController
             return Unauthorized(new { message = "Usuario no autenticado o token inválido" });
         }
 
-        // 🚀 Crear query con todos los parámetros
         var query = new GetGastosPagedListQuery(page, pageSize, searchTerm, sortColumn, sortOrder)
         {
             UsuarioId = usuarioId
         };
 
         var result = await _sender.Send(query);
-        return HandleResult(result);
+        return HandlePagedResult(result); // 🆕 Usando HandlePagedResult
     }
 
     [Authorize]
@@ -83,7 +82,7 @@ public class GastosController : AbsController
 
         var result = await _sender.Send(command);
 
-        return HandleResult(result);
+        return HandleResultForCreation(result, nameof(GetById), new { id = result.Value });
     }
 
     [Authorize]
