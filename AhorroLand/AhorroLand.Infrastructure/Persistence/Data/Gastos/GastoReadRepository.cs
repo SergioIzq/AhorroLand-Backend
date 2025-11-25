@@ -11,26 +11,29 @@ namespace AhorroLand.Infrastructure.Persistence.Data.Gastos
         {
         }
 
-     protected override string GetTableAlias()
+        protected override string GetTableAlias()
         {
-   return "g";
+            return "g";
         }
 
- protected override string BuildCountQuery()
-    {
+        protected override string BuildCountQuery()
+        {
+            // ✅ AGREGADO: LEFT JOIN categorias cat ON c.id_categoria = cat.id
+            // Esto permite que el WHERE cat.nombre funcione en el conteo.
             return @"SELECT COUNT(*) FROM gastos g
 LEFT JOIN conceptos c ON g.id_concepto = c.id
+LEFT JOIN categorias cat ON c.id_categoria = cat.id 
 LEFT JOIN proveedores prov ON g.id_proveedor = prov.id
 LEFT JOIN personas p ON g.id_persona = p.id
 LEFT JOIN cuentas cta ON g.id_cuenta = cta.id
 LEFT JOIN formas_pago fp ON g.id_forma_pago = fp.id";
-  }
+        }
 
         /// <summary>
         /// ✅ CORRECTO: CategoriaId se obtiene del CONCEPTO (c.categoria_id), no del gasto
         /// </summary>
-    protected override string BuildGetByIdQuery()
-     {
+        protected override string BuildGetByIdQuery()
+        {
             return @"
 SELECT 
     g.id as Id,
@@ -92,17 +95,17 @@ LEFT JOIN formas_pago fp ON g.id_forma_pago = fp.id";
 
         protected override string BuildGetPagedQuery()
         {
-     return BuildGetAllQuery();
+            return BuildGetAllQuery();
         }
 
-  protected override string GetDefaultOrderBy()
+        protected override string GetDefaultOrderBy()
         {
-  return "ORDER BY g.fecha DESC, g.id DESC";
-      }
+            return "ORDER BY g.fecha DESC, g.id DESC";
+        }
 
         protected override Dictionary<string, string> GetSortableColumns()
-     {
-   return new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+        {
+            return new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
      {
          { "Fecha", "g.fecha" },
         { "Importe", "g.importe" },
@@ -113,20 +116,20 @@ LEFT JOIN formas_pago fp ON g.id_forma_pago = fp.id";
        { "CuentaNombre", "cta.nombre" },
  { "FormaPagoNombre", "fp.nombre" }
             };
-     }
+        }
 
         protected override List<string> GetSearchableColumns()
         {
             return new List<string>
-    {
-    "g.descripcion",
-        "c.nombre",
-                "cat.nombre",
-       "prov.nombre",
-      "p.nombre",
-              "cta.nombre"
-     };
-      }
+            {
+                "g.descripcion",      // Descripción del gasto
+                "c.nombre",           // Nombre del concepto
+                "cat.nombre",         // ✅ Nombre de categoría (a través de JOIN con conceptos)
+                "prov.nombre",        // Nombre del proveedor (opcional)
+                "p.nombre",           // Nombre de la persona (opcional)
+                "cta.nombre"          // Nombre de la cuenta
+            };
+        }
 
         protected override List<string> GetNumericSearchableColumns()
         {
@@ -137,11 +140,11 @@ LEFT JOIN formas_pago fp ON g.id_forma_pago = fp.id";
         }
 
         protected override List<string> GetDateSearchableColumns()
-     {
-       return new List<string>
+        {
+            return new List<string>
       {
                 "g.fecha"
    };
-      }
+        }
     }
 }
