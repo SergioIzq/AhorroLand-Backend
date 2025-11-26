@@ -57,21 +57,26 @@ IOptions<EmailSettings> options,
         {
             // 1. Crear el mensaje MIME
             var mimeMessage = new MimeMessage();
-            mimeMessage.From.Add(new MailboxAddress(_settings.FromName ?? "AhorroLand", _settings.SmtpUser));
+
+            // CORRECCIÓN 1: Usar FromEmail en vez de SmtpUser
+            mimeMessage.From.Add(new MailboxAddress(_settings.FromName, _settings.FromEmail));
+            mimeMessage.ReplyTo.Add(MailboxAddress.Parse("sergioizq.dev@gmail.com"));
             mimeMessage.To.Add(MailboxAddress.Parse(message.To));
             mimeMessage.Subject = message.Subject;
 
             var builder = new BodyBuilder { HtmlBody = message.Body };
             mimeMessage.Body = builder.ToMessageBody();
 
-            // 2. Conexión y envío con MailKit (más eficiente y moderno)
+            // 2. Conexión Inteligente
+            // MailKit recomienda 'Auto' para que él detecte si debe usar SSL o StartTLS según el puerto.
+            // Para Brevo puerto 587, esto usará StartTls automáticamente.
             await client.ConnectAsync(
-      _settings.SmtpServer,
-          _settings.SmtpPort,
-         _settings.EnableSsl ? SecureSocketOptions.SslOnConnect : SecureSocketOptions.StartTls,
+                _settings.SmtpServer,
+                _settings.SmtpPort,
+                SecureSocketOptions.Auto,
                 cancellationToken);
 
-            // Autenticación si está configurada
+            // Autenticación
             if (!string.IsNullOrEmpty(_settings.SmtpUser) && !string.IsNullOrEmpty(_settings.SmtpPass))
             {
                 await client.AuthenticateAsync(_settings.SmtpUser, _settings.SmtpPass, cancellationToken);
@@ -79,14 +84,11 @@ IOptions<EmailSettings> options,
 
             await client.SendAsync(mimeMessage, cancellationToken);
 
-            _logger.LogInformation("✅ Email enviado exitosamente a {To}", message.To);
+            _logger.LogInformation("✅ Email enviado a {To}", message.To);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "❌ Error al enviar email a {To}: {Message}", message.To, ex.Message);
-
-            // TODO: Implementar lógica de reintento o dead-letter queue
-            // Por ahora, el email se pierde si falla
+            _logger.LogError(ex, "❌ Error enviando a {To}: {Message}", message.To, ex.Message);
         }
         finally
         {

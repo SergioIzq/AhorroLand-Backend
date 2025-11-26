@@ -1,17 +1,20 @@
 ﻿using AhorroLand.Shared.Domain.Abstractions;
 using AhorroLand.Shared.Domain.ValueObjects;
+using AhorroLand.Shared.Domain.ValueObjects.Ids;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace AhorroLand.Domain;
 
-public sealed class Gasto : AbsEntity
+[Table("gastos")]
+public sealed class Gasto : AbsEntity<GastoId>
 {
     // Constructor privado sin parámetros para EF Core
-    private Gasto() : base(Guid.Empty)
+    private Gasto() : base(new GastoId(Guid.Empty))
     {
     }
 
     private Gasto(
-     Guid id,
+     GastoId id,
      Cantidad importe,
       FechaRegistro fecha,
         ConceptoId conceptoId,
@@ -67,7 +70,7 @@ FechaRegistro fecha,
         Descripcion? descripcion)
     {
         var gasto = new Gasto(
-            Guid.NewGuid(),
+            new GastoId(Guid.NewGuid()),
             importe,
      fecha,
    conceptoId,

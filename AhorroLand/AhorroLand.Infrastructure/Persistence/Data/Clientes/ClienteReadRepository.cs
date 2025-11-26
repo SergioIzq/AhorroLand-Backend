@@ -2,6 +2,7 @@
 using AhorroLand.Infrastructure.Persistence.Query;
 using AhorroLand.Shared.Application.Dtos;
 using AhorroLand.Shared.Domain.ValueObjects;
+using AhorroLand.Shared.Domain.ValueObjects.Ids;
 using Dapper;
 
 namespace AhorroLand.Infrastructure.Persistence.Data.Clientes
@@ -10,7 +11,7 @@ namespace AhorroLand.Infrastructure.Persistence.Data.Clientes
     /// Repositorio de lectura optimizado para Clientes.
     /// ✅ Incluye filtro por usuario para aprovechar índices de base de datos.
     /// </summary>
-    public class ClienteReadRepository : AbsReadRepository<Cliente, ClienteDto>, IClienteReadRepository
+    public class ClienteReadRepository : AbsReadRepository<Cliente, ClienteDto, ClienteId>, IClienteReadRepository
     {
         public ClienteReadRepository(IDbConnectionFactory dbConnectionFactory)
    : base(dbConnectionFactory, "clientes")

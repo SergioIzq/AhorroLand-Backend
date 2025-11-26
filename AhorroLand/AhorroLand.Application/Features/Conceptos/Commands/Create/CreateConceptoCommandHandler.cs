@@ -1,4 +1,4 @@
-using AhorroLand.Domain;
+锘縰sing AhorroLand.Domain;
 using AhorroLand.Shared.Application.Abstractions.Messaging.Abstracts.Commands;
 using AhorroLand.Shared.Application.Abstractions.Servicies;
 using AhorroLand.Shared.Application.Dtos;
@@ -7,18 +7,19 @@ using AhorroLand.Shared.Domain.Interfaces;
 using AhorroLand.Shared.Domain.Interfaces.Repositories;
 using AhorroLand.Shared.Domain.ValueObjects;
 using Mapster;
+using AhorroLand.Shared.Domain.ValueObjects.Ids;
 
 namespace AhorroLand.Application.Features.Conceptos.Commands;
 
 public sealed class CreateConceptoCommandHandler
-    : AbsCreateCommandHandler<Concepto, ConceptoDto, CreateConceptoCommand>
+    : AbsCreateCommandHandler<Concepto, ConceptoId, CreateConceptoCommand>
 {
-    // ? Inyectamos IDomainValidator para las consultas r醦idas
+    // ? Inyectamos IDomainValidator para las consultas r谩pidas
     private readonly IDomainValidator _validator;
 
     public CreateConceptoCommandHandler(
         IUnitOfWork unitOfWork,
-        IWriteRepository<Concepto> writeRepository,
+        IWriteRepository<Concepto, ConceptoId> writeRepository,
         ICacheService cacheService,
         IDomainValidator validator) // Recibimos el validador
     : base(unitOfWork, writeRepository, cacheService)
@@ -26,21 +27,21 @@ public sealed class CreateConceptoCommandHandler
         _validator = validator;
     }
 
-    // ? CAMBIO CLAVE: Mover la l骻ica a Handle para hacerlo AS蚇CRONO y eficiente.
-    public override async Task<Result<ConceptoDto>> Handle(
+    // ? CAMBIO CLAVE: Mover la l贸gica a Handle para hacerlo AS脥NCRONO y eficiente.
+    public override async Task<Result<Guid>> Handle(
         CreateConceptoCommand command, CancellationToken cancellationToken)
     {
-        // 1. VALIDACI覰 AS蚇CRONA DE EXISTENCIA (SELECT 1)
-        var categoriaExists = await _validator.ExistsAsync<Categoria>(command.CategoriaId);
+        // 1. VALIDACI脫N AS脥NCRONA DE EXISTENCIA (SELECT 1)
+        var categoriaExists = await _validator.ExistsAsync<Categoria, CategoriaId>(new CategoriaId(command.CategoriaId));
 
         if (!categoriaExists)
         {
-            // Devolvemos un Result.Failure si la referencia no es v醠ida.
-            return Result.Failure<ConceptoDto>(
+            // Devolvemos un Result.Failure si la referencia no es v谩lida.
+            return Result.Failure<Guid>(
                 Error.NotFound($"Categoria con id {command.CategoriaId} no fue encontrada."));
         }
 
-        // 2. CREACI覰 DE VALUE OBJECTS (VOs)
+        // 2. CREACI脫N DE VALUE OBJECTS (VOs)
         try
         {
             var nombreVO = new Nombre(command.Nombre);
@@ -49,7 +50,7 @@ public sealed class CreateConceptoCommandHandler
             // Creamos el VO de Identidad para la referencia
             var categoriaId = new CategoriaId(command.CategoriaId);
 
-            // 3. CREACI覰 DE LA ENTIDAD DE DOMINIO
+            // 3. CREACI脫N DE LA ENTIDAD DE DOMINIO
             // ? NOTA: Concepto.Create debe aceptar CategoriaId en lugar de la entidad Categoria
             var newConcepto = Concepto.Create(
                 nombreVO,
@@ -60,28 +61,26 @@ public sealed class CreateConceptoCommandHandler
 
             if (entityResult.IsFailure)
             {
-                return Result.Failure<ConceptoDto>(entityResult.Error);
+                return Result.Failure<Guid>(entityResult.Error);
             }
 
-            // 5. MAPEO Y 蒟ITO
-            var dto = entityResult.Value.Adapt<ConceptoDto>();
-
-            return Result.Success(dto);
+            // 5. MAPEO Y 脡XITO
+            return Result.Success(entityResult.Value);
         }
         catch (ArgumentException ex)
         {
-            // Captura de errores de validaci髇 de Value Objects
-            return Result.Failure<ConceptoDto>(Error.Validation(ex.Message));
+            // Captura de errores de validaci贸n de Value Objects
+            return Result.Failure<Guid>(Error.Validation(ex.Message));
         }
         catch (Exception ex)
         {
-            return Result.Failure<ConceptoDto>(Error.Failure("Error.Unexpected", "Error Inesperado", ex.Message));
+            return Result.Failure<Guid>(Error.Failure("Error.Unexpected", "Error Inesperado", ex.Message));
         }
     }
 
-    // ? OPTIMIZACI覰: Lanzar excepci髇 para asegurar que la abstracci髇 base s韓crona no se use.
+    // ? OPTIMIZACI脫N: Lanzar excepci贸n para asegurar que la abstracci贸n base s铆ncrona no se use.
     protected override Concepto CreateEntity(CreateConceptoCommand command)
     {
-        throw new NotImplementedException("CreateEntity no debe usarse. La l骻ica de creaci髇 as韓crona reside en el m閠odo Handle.");
+        throw new NotImplementedException("CreateEntity no debe usarse. La l贸gica de creaci贸n as铆ncrona reside en el m茅todo Handle.");
     }
 }

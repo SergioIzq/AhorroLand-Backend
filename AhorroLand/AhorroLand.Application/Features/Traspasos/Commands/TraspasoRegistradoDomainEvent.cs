@@ -3,15 +3,16 @@ using AhorroLand.Domain;
 using AhorroLand.Domain.Traspasos.Eventos;
 using AhorroLand.Shared.Application.Dtos;
 using AhorroLand.Shared.Domain.Interfaces.Repositories;
+using AhorroLand.Shared.Domain.ValueObjects.Ids;
 
 // ⭐ Este Event Handler maneja la lógica de actualización de saldos.
 public sealed class ActualizarSaldosCuentaOnTraspasoRegistrado : IDomainEventHandler<TraspasoRegistradoDomainEvent>
 {
     // ⭐ Usamos SOLO el WriteRepository para cargar entidades con tracking
-    private readonly IWriteRepository<Cuenta> _cuentaWriteRepo;
+    private readonly IWriteRepository<Cuenta, CuentaId> _cuentaWriteRepo;
 
     public ActualizarSaldosCuentaOnTraspasoRegistrado(
-        IWriteRepository<Cuenta> cuentaWriteRepo
+        IWriteRepository<Cuenta, CuentaId> cuentaWriteRepo
     )
     {
         _cuentaWriteRepo = cuentaWriteRepo;

@@ -1,5 +1,6 @@
-using AhorroLand.Shared.Application.Abstractions.Messaging;
+﻿using AhorroLand.Shared.Application.Abstractions.Messaging;
 using AhorroLand.Shared.Application.Dtos;
+using AhorroLand.Shared.Domain.ValueObjects.Ids;
 
 namespace AhorroLand.Application.Features.Dashboard.Queries;
 
@@ -15,7 +16,7 @@ public sealed record GetDashboardResumenQuery(
 ) : IQuery<DashboardResumenDto>
 {
     /// <summary>
-    /// Indica si se debe usar el per�odo del mes actual (cuando FechaInicio y FechaFin son null).
+    /// Indica si se debe usar el período del mes actual (cuando FechaInicio y FechaFin son null).
     /// </summary>
     public bool UsarMesActual => FechaInicio == null && FechaFin == null;
 }

@@ -48,13 +48,9 @@ public class IngresosProgramadosController : AbsController
             ConceptoNombre = request.ConceptoNombre,
             CategoriaId = request.CategoriaId,
             ClienteId = request.ClienteId,
-            ClienteNombre = request.ClienteNombre,
             PersonaId = request.PersonaId,
-            PersonaNombre = request.PersonaNombre,
             CuentaId = request.CuentaId,
-            CuentaNombre = request.CuentaNombre,
             FormaPagoId = request.FormaPagoId,
-            FormaPagoNombre = request.FormaPagoNombre
         };
 
         var result = await _sender.Send(command);
@@ -62,7 +58,7 @@ public class IngresosProgramadosController : AbsController
         return HandleResultForCreation(
            result,
         nameof(GetById),
-    new { id = result.Value.Id }
+    new { id = result.Value }
           );
     }
 

@@ -2,18 +2,21 @@
 using AhorroLand.Shared.Domain.Abstractions;
 using AhorroLand.Shared.Domain.Abstractions.Results;
 using AhorroLand.Shared.Domain.ValueObjects;
+using AhorroLand.Shared.Domain.ValueObjects.Ids;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace AhorroLand.Domain;
 
-public sealed class TraspasoProgramado : AbsEntity
+[Table("traspasos_programados")]
+public sealed class TraspasoProgramado : AbsEntity<TraspasoProgramadoId>
 {
-    private TraspasoProgramado() : base(Guid.Empty)
+    private TraspasoProgramado() : base(new TraspasoProgramadoId(Guid.Empty))
     {
 
     }
 
     private TraspasoProgramado(
-        Guid id,
+        TraspasoProgramadoId id,
         CuentaId cuentaOrigenId,
         CuentaId cuentaDestinoId,
         Cantidad importe,
@@ -69,7 +72,7 @@ public sealed class TraspasoProgramado : AbsEntity
             return Result.Failure<TraspasoProgramado>(Error.Validation("El importe debe ser mayor a cero."));
 
         var traspaso = new TraspasoProgramado(
-            Guid.NewGuid(),
+            new TraspasoProgramadoId(Guid.NewGuid()),
             cuentaOrigenId,
             cuentaDestinoId,
             importe,
@@ -82,7 +85,7 @@ public sealed class TraspasoProgramado : AbsEntity
 
         // 🔥 LANZAR EVENTO DE DOMINIO
         traspaso.AddDomainEvent(new TraspasoProgramadoCreadoEvent(
-            traspaso.Id,
+            traspaso.Id.Value,
             frecuencia,
             fechaEjecucion
         ));

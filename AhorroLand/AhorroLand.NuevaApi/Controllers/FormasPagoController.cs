@@ -102,7 +102,7 @@ public async Task<IActionResult> GetRecent([FromQuery] int limit = 5)
     return HandleResultForCreation(
   result,
  nameof(GetById),
-    new { id = result.Value.Id }
+    new { id = result.Value }
         );
     }
 

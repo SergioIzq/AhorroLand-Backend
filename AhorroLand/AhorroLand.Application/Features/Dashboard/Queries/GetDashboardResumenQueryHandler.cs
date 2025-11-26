@@ -1,7 +1,8 @@
-using AhorroLand.Application.Interfaces;
+﻿using AhorroLand.Application.Interfaces;
 using AhorroLand.Shared.Application.Abstractions.Messaging;
 using AhorroLand.Shared.Application.Dtos;
 using AhorroLand.Shared.Domain.Abstractions.Results;
+using AhorroLand.Shared.Domain.ValueObjects.Ids;
 
 namespace AhorroLand.Application.Features.Dashboard.Queries;
 

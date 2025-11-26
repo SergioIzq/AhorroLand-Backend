@@ -18,7 +18,7 @@
         public string Username => SmtpUser;
         public string Password => SmtpPass;
         public bool EnableSsl { get; set; } = true;
-        public string FromEmail { get; set; } = string.Empty;
-        public string FromName { get; set; } = "AhorroLand";
+        public string FromEmail { get; set; } = "notificaciones@sergioizq.com";
+        public string FromName { get; set; } = "Equipo AhorroLand";
     }
 }

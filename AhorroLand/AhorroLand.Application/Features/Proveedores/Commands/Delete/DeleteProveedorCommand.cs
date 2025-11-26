@@ -1,5 +1,6 @@
 ﻿using AhorroLand.Domain;
 using AhorroLand.Shared.Application.Abstractions.Messaging.Abstracts.Commands;
+using AhorroLand.Shared.Domain.ValueObjects.Ids;
 
 namespace AhorroLand.Application.Features.Proveedores.Commands;
 
@@ -8,4 +9,4 @@ namespace AhorroLand.Application.Features.Proveedores.Commands;
 /// </summary>
 // Hereda de AbsDeleteCommand<Entidad>
 public sealed record DeleteProveedorCommand(Guid Id)
-    : AbsDeleteCommand<Proveedor>(Id);
+    : AbsDeleteCommand<Proveedor, ProveedorId>(Id);

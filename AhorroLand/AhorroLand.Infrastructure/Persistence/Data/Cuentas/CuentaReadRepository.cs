@@ -2,11 +2,12 @@
 using AhorroLand.Infrastructure.Persistence.Query;
 using AhorroLand.Shared.Application.Dtos;
 using AhorroLand.Shared.Domain.ValueObjects;
+using AhorroLand.Shared.Domain.ValueObjects.Ids;
 using Dapper;
 
 namespace AhorroLand.Infrastructure.Persistence.Data.Cuentas;
 
-public class CuentaReadRepository : AbsReadRepository<Cuenta, CuentaDto>, ICuentaReadRepository
+public class CuentaReadRepository : AbsReadRepository<Cuenta, CuentaDto, CuentaId>, ICuentaReadRepository
 {
     public CuentaReadRepository(IDbConnectionFactory dbConnectionFactory)
         : base(dbConnectionFactory, "cuentas")

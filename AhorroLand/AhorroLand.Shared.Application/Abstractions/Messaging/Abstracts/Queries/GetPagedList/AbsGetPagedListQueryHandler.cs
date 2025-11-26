@@ -1,6 +1,7 @@
 ﻿using AhorroLand.Shared.Application.Abstractions.Servicies;
 using AhorroLand.Shared.Domain.Abstractions;
 using AhorroLand.Shared.Domain.Abstractions.Results;
+using AhorroLand.Shared.Domain.Interfaces;
 using AhorroLand.Shared.Domain.Interfaces.Repositories;
 using AhorroLand.Shared.Domain.Results;
 using MediatR;
@@ -13,18 +14,19 @@ namespace AhorroLand.Shared.Application.Abstractions.Messaging.Abstracts.Queries
     /// 🔧 FIX: Usa GetPagedReadModelsAsync para evitar problemas de mapeo con Value Objects.
     /// 🚀 CACHE: Implementa cache con Redis para requests repetidos (~5ms en lugar de 370ms).
     /// </summary>
-    public abstract class GetPagedListQueryHandler<TEntity, TDto, TQuery>
-        : AbsQueryHandler<TEntity>, IRequestHandler<TQuery, Result<PagedList<TDto>>>
-        where TEntity : AbsEntity
-        where TQuery : AbsGetPagedListQuery<TEntity, TDto>
+    public abstract class GetPagedListQueryHandler<TEntity, TId, TDto, TQuery>
+        : AbsQueryHandler<TEntity, TId>, IRequestHandler<TQuery, Result<PagedList<TDto>>>
+        where TEntity : AbsEntity<TId>
+        where TQuery : AbsGetPagedListQuery<TEntity, TId, TDto>
         where TDto : class
+        where TId : IGuidValueObject
     {
         // 🔥 ÚNICO REPOSITORIO: Solo usamos IReadRepositoryWithDto
-        protected readonly IReadRepositoryWithDto<TEntity, TDto> _dtoRepository;
+        protected readonly IReadRepositoryWithDto<TEntity, TDto, TId> _dtoRepository;
 
         // 🔥 Constructor simplificado
         public GetPagedListQueryHandler(
-            IReadRepositoryWithDto<TEntity, TDto> dtoRepository,
+            IReadRepositoryWithDto<TEntity, TDto, TId> dtoRepository,
             ICacheService cacheService)
             : base(cacheService)
         {

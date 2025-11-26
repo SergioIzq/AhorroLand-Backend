@@ -88,7 +88,7 @@ namespace AhorroLand.Infrastructure
  // 👉 Registro automático de repositorios de ESCRITURA
             services.Scan(scan => scan
          .FromAssemblies(Assembly.GetExecutingAssembly())
-  .AddClasses(classes => classes.AssignableTo(typeof(IWriteRepository<>)))
+  .AddClasses(classes => classes.AssignableTo(typeof(IWriteRepository<,>)))
         .AsImplementedInterfaces()
               .WithScopedLifetime()
         );
@@ -100,7 +100,7 @@ namespace AhorroLand.Infrastructure
       .AddClasses(classes => classes
      .Where(type => type.GetInterfaces()
      .Any(i => i.IsGenericType && 
-           i.GetGenericTypeDefinition() == typeof(IReadRepositoryWithDto<,>))))
+           i.GetGenericTypeDefinition() == typeof(IReadRepositoryWithDto<, ,>))))
            .AsImplementedInterfaces()
      .WithScopedLifetime()
     );

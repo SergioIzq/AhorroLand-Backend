@@ -2,11 +2,12 @@
 using AhorroLand.Infrastructure.Persistence.Query;
 using AhorroLand.Shared.Application.Dtos;
 using AhorroLand.Shared.Domain.ValueObjects;
+using AhorroLand.Shared.Domain.ValueObjects.Ids;
 using Dapper;
 
 namespace AhorroLand.Infrastructure.Persistence.Data.Personas
 {
-    public class PersonaReadRepository : AbsReadRepository<Persona, PersonaDto>, IPersonaReadRepository
+    public class PersonaReadRepository : AbsReadRepository<Persona, PersonaDto, PersonaId>, IPersonaReadRepository
     {
         public PersonaReadRepository(IDbConnectionFactory dbConnectionFactory)
             : base(dbConnectionFactory, "personas")

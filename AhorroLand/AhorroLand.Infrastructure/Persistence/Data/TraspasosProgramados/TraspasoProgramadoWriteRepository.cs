@@ -1,11 +1,12 @@
 ﻿using AhorroLand.Domain;
 using AhorroLand.Infrastructure.Persistence.Command;
+using AhorroLand.Shared.Domain.ValueObjects.Ids;
 
 namespace AhorroLand.Infrastructure.Persistence.Data.TraspasosProgramados
 {
 
     // Nota: Asegúrate de que ITraspasoProgramadoWriteRepository herede de IWriteRepository<TraspasoProgramado>
-    public class TraspasoProgramadoWriteRepository : AbsWriteRepository<TraspasoProgramado>, ITraspasoProgramadoWriteRepository
+    public class TraspasoProgramadoWriteRepository : AbsWriteRepository<TraspasoProgramado, TraspasoProgramadoId>, ITraspasoProgramadoWriteRepository
     {
         public TraspasoProgramadoWriteRepository(AhorroLandDbContext context) : base(context)
         {

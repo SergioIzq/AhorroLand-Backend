@@ -1,16 +1,19 @@
 ﻿using AhorroLand.Shared.Domain.Abstractions;
 using AhorroLand.Shared.Domain.ValueObjects;
+using AhorroLand.Shared.Domain.ValueObjects.Ids;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace AhorroLand.Domain;
 
-public sealed class Concepto : AbsEntity
+[Table("conceptos")]
+public sealed class Concepto : AbsEntity<ConceptoId>
 {
     // Constructor privado sin parámetros para EF Core
-    private Concepto() : base(Guid.Empty)
+    private Concepto() : base(new ConceptoId(Guid.Empty))
     {
     }
 
-    private Concepto(Guid id, Nombre nombre, CategoriaId categoriaId, UsuarioId usuarioId) : base(id)
+    private Concepto(ConceptoId id, Nombre nombre, CategoriaId categoriaId, UsuarioId usuarioId) : base(id)
     {
         Nombre = nombre;
         CategoriaId = categoriaId;
@@ -24,7 +27,7 @@ public sealed class Concepto : AbsEntity
 
     public static Concepto Create(Nombre nombre, CategoriaId categoriaId, UsuarioId usuarioId)
     {
-        var concepto = new Concepto(Guid.NewGuid(), nombre, categoriaId, usuarioId);
+        var concepto = new Concepto(new ConceptoId(Guid.NewGuid()), nombre, categoriaId, usuarioId);
 
         return concepto;
     }

@@ -1,18 +1,19 @@
-using AhorroLand.Domain;
+﻿using AhorroLand.Domain;
 using AhorroLand.Shared.Application.Abstractions.Messaging.Abstracts.Commands;
 using AhorroLand.Shared.Application.Abstractions.Servicies;
 using AhorroLand.Shared.Application.Dtos;
 using AhorroLand.Shared.Domain.Interfaces;
 using AhorroLand.Shared.Domain.Interfaces.Repositories;
 using AhorroLand.Shared.Domain.ValueObjects;
+using AhorroLand.Shared.Domain.ValueObjects.Ids;
 
 namespace AhorroLand.Application.Features.FormasPago.Commands;
 
-public sealed class CreateFormaPagoCommandHandler : AbsCreateCommandHandler<FormaPago, FormaPagoDto, CreateFormaPagoCommand>
+public sealed class CreateFormaPagoCommandHandler : AbsCreateCommandHandler<FormaPago, FormaPagoId, CreateFormaPagoCommand>
 {
     public CreateFormaPagoCommandHandler(
     IUnitOfWork unitOfWork,
-    IWriteRepository<FormaPago> writeRepository,
+    IWriteRepository<FormaPago, FormaPagoId> writeRepository,
     ICacheService cacheService)
     : base(unitOfWork, writeRepository, cacheService)
     {

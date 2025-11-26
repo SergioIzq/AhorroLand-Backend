@@ -1,6 +1,7 @@
 using AhorroLand.Shared.Application.Abstractions.Servicies;
 using AhorroLand.Shared.Domain.Abstractions;
 using AhorroLand.Shared.Domain.Abstractions.Results;
+using AhorroLand.Shared.Domain.Interfaces;
 using AhorroLand.Shared.Domain.Interfaces.Repositories;
 using MediatR;
 
@@ -12,16 +13,17 @@ namespace AhorroLand.Shared.Application.Abstractions.Messaging.Abstracts.Queries
 /// ? Resultados limitados (máximo 5-50 items)
 /// ? Optimizado para <10ms de respuesta
 /// </summary>
-public abstract class GetRecentQueryHandler<TEntity, TDto, TQuery>
-    : AbsQueryHandler<TEntity>, IRequestHandler<TQuery, Result<IEnumerable<TDto>>>
-    where TEntity : AbsEntity
-    where TQuery : GetRecentQuery<TEntity, TDto>
+public abstract class GetRecentQueryHandler<TEntity, TDto, TId, TQuery>
+    : AbsQueryHandler<TEntity, TId>, IRequestHandler<TQuery, Result<IEnumerable<TDto>>>
+    where TEntity : AbsEntity<TId>
+    where TQuery : GetRecentQuery<TEntity, TDto, TId>
     where TDto : class
+    where TId : IGuidValueObject
 {
-    protected readonly IReadRepositoryWithDto<TEntity, TDto> _repository;
+    protected readonly IReadRepositoryWithDto<TEntity, TDto, TId> _repository;
 
     protected GetRecentQueryHandler(
-        IReadRepositoryWithDto<TEntity, TDto> repository,
+        IReadRepositoryWithDto<TEntity, TDto, TId> repository,
         ICacheService cacheService)
         : base(cacheService)
     {

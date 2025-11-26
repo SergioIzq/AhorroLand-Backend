@@ -1,17 +1,20 @@
 ﻿using AhorroLand.Shared.Domain.Abstractions;
 using AhorroLand.Shared.Domain.ValueObjects;
+using AhorroLand.Shared.Domain.ValueObjects.Ids;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace AhorroLand.Domain;
 
-public sealed class Ingreso : AbsEntity
+[Table("ingresos")]
+public sealed class Ingreso : AbsEntity<IngresoId>
 {
     // Constructor privado sin parámetros para EF Core
-    private Ingreso() : base(Guid.Empty)
+    private Ingreso() : base(new IngresoId(Guid.Empty))
     {
     }
 
     private Ingreso(
-        Guid id,
+        IngresoId id,
         Cantidad importe,
         FechaRegistro fecha,
         ConceptoId conceptoId,
@@ -44,6 +47,13 @@ public sealed class Ingreso : AbsEntity
     public FormaPagoId FormaPagoId { get; private set; }
     public UsuarioId UsuarioId { get; private set; }
 
+    public Concepto Concepto { get; private set; } = null!;
+    public Cliente Cliente { get; private set; } = null!;
+    public Persona Persona { get; private set; } = null!;
+    public Cuenta Cuenta { get; private set; } = null!;
+    public FormaPago FormaPago { get; private set; } = null!;
+    public Usuario Usuario { get; private set; } = null!;
+
     // El método Create genera el ID y no recibe los "Nombre"
     public static Ingreso Create(
         Cantidad importe,
@@ -56,8 +66,8 @@ public sealed class Ingreso : AbsEntity
         UsuarioId usuarioId,
         Descripcion? descripcion)
     {
-        var Ingreso = new Ingreso(
-            Guid.NewGuid(),
+        var ingreso = new Ingreso(
+            new IngresoId(Guid.NewGuid()),
             importe,
             fecha,
             conceptoId,
@@ -68,7 +78,7 @@ public sealed class Ingreso : AbsEntity
             usuarioId,
             descripcion);
 
-        return Ingreso;
+        return ingreso;
     }
 
     public void Update(

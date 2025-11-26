@@ -1,4 +1,4 @@
-using AhorroLand.Domain;
+锘縰sing AhorroLand.Domain;
 using AhorroLand.Shared.Application.Abstractions.Messaging.Abstracts.Commands;
 using AhorroLand.Shared.Application.Abstractions.Servicies;
 using AhorroLand.Shared.Application.Dtos;
@@ -7,18 +7,19 @@ using AhorroLand.Shared.Domain.Interfaces;
 using AhorroLand.Shared.Domain.Interfaces.Repositories;
 using AhorroLand.Shared.Domain.ValueObjects;
 using Mapster;
+using AhorroLand.Shared.Domain.ValueObjects.Ids;
 
 namespace AhorroLand.Application.Features.GastosProgramados.Commands;
 
 public sealed class CreateGastoProgramadoCommandHandler
-    : AbsCreateCommandHandler<GastoProgramado, GastoProgramadoDto, CreateGastoProgramadoCommand>
+    : AbsCreateCommandHandler<GastoProgramado, GastoProgramadoId, CreateGastoProgramadoCommand>
 {
     private readonly IDomainValidator _validator;
     private readonly IJobSchedulingService _jobSchedulingService;
 
     public CreateGastoProgramadoCommandHandler(
         IUnitOfWork unitOfWork,
-        IWriteRepository<GastoProgramado> writeRepository,
+        IWriteRepository<GastoProgramado, GastoProgramadoId> writeRepository,
         ICacheService cacheService,
         IDomainValidator validator,
         IJobSchedulingService jobSchedulingService)
@@ -28,37 +29,37 @@ public sealed class CreateGastoProgramadoCommandHandler
         _jobSchedulingService = jobSchedulingService;
     }
 
-    public override async Task<Result<GastoProgramadoDto>> Handle(
+    public override async Task<Result<Guid>> Handle(
         CreateGastoProgramadoCommand command, CancellationToken cancellationToken)
     {
-        // 1. VALIDACI覰 AS蚇CRONA EN PARALELO (M醲ima Optimizaci髇 I/O)
+        // 1. VALIDACI脫N AS脥NCRONA EN PARALELO (M谩xima Optimizaci贸n I/O)
         var validationTasks = new[]
         {
             // Validaciones obligatorias
-            _validator.ExistsAsync<Concepto>(command.ConceptoId),
-            _validator.ExistsAsync<Cuenta>(command.CuentaId),
-            _validator.ExistsAsync<FormaPago>(command.FormaPagoId),
+            _validator.ExistsAsync<Concepto, ConceptoId>(new ConceptoId(command.ConceptoId)),
+            _validator.ExistsAsync<Cuenta, CuentaId>(new CuentaId(command.CuentaId)),
+            _validator.ExistsAsync < FormaPago, FormaPagoId >(new FormaPagoId(command.FormaPagoId)),
             // Validaciones opcionales/contextuales
-            _validator.ExistsAsync<Proveedor>(command.ProveedorId),
-            _validator.ExistsAsync<Persona>(command.PersonaId),
+            _validator.ExistsAsync < Proveedor, ProveedorId >(new ProveedorId(command.ProveedorId)),
+            _validator.ExistsAsync < Persona, PersonaId >(new PersonaId(command.PersonaId)),
         };
 
         // Espera a que todas las consultas terminen al mismo tiempo.
         var results = await Task.WhenAll(validationTasks);
 
-        // 2. CHEQUEO R罰IDO DE ERRORES DE EXISTENCIA
+        // 2. CHEQUEO R脕PIDO DE ERRORES DE EXISTENCIA
         if (results.Any(r => !r))
         {
             // Retorno de error con el mensaje de Error.NotFound
-            return Result.Failure<GastoProgramadoDto>(
-                Error.NotFound("Una o m醩 entidades referenciadas (Concepto, Cuenta, Proveedor, etc.) no existen."));
+            return Result.Failure<Guid>(
+                Error.NotFound("Una o m谩s entidades referenciadas (Concepto, Cuenta, Proveedor, etc.) no existen."));
         }
 
-        // 3. CREACI覰 DE VALUE OBJECTS (VOs) DENTRO DE UN TRY-CATCH
+        // 3. CREACI脫N DE VALUE OBJECTS (VOs) DENTRO DE UN TRY-CATCH
         // Volvemos al try-catch para manejar las ArgumentException lanzadas por los VOs.
         try
         {
-            // Creaci髇 de VOs, que ahora son los que lanzan ArgumentException
+            // Creaci贸n de VOs, que ahora son los que lanzan ArgumentException
             var importe = new Cantidad(command.Importe);
             var frecuencia = new Frecuencia(command.Frecuencia);
             var descripcion = new Descripcion(command.Descripcion ?? string.Empty);
@@ -74,7 +75,7 @@ public sealed class CreateGastoProgramadoCommandHandler
             // Uso del servicio de infraestructura para generar el JobId
             var hangfireJobId = _jobSchedulingService.GenerateJobId();
 
-            // 4. CREACI覰 DE LA ENTIDAD DE DOMINIO (GastoProgramado)
+            // 4. CREACI脫N DE LA ENTIDAD DE DOMINIO (GastoProgramado)
             var gastoProgramado = GastoProgramado.Create(
                 importe,
                 command.FechaEjecucion!.Value,
@@ -95,26 +96,24 @@ public sealed class CreateGastoProgramadoCommandHandler
 
             if (entityResult.IsFailure)
             {
-                return Result.Failure<GastoProgramadoDto>(entityResult.Error);
+                return Result.Failure<Guid>(entityResult.Error);
             }
 
-            // 6. MAPEO Y 蒟ITO
-            var dto = entityResult.Value.Adapt<GastoProgramadoDto>();
-
-            return Result.Success(dto);
+            // 6. MAPEO Y 脡XITO
+            return Result.Success(entityResult.Value);
         }
         catch (ArgumentException ex)
         {
-            return Result.Failure<GastoProgramadoDto>(Error.Validation(ex.Message));
+            return Result.Failure<Guid>(Error.Validation(ex.Message));
         }
         catch (Exception ex)
         {
-            return Result.Failure<GastoProgramadoDto>(Error.Failure("Error.Unexpected", "Error Inesperado", ex.Message));
+            return Result.Failure<Guid>(Error.Failure("Error.Unexpected", "Error Inesperado", ex.Message));
         }
     }
 
     protected override GastoProgramado CreateEntity(CreateGastoProgramadoCommand command)
     {
-        throw new NotImplementedException("CreateEntity no debe usarse. La l骻ica de creaci髇 as韓crona reside en el m閠odo Handle.");
+        throw new NotImplementedException("CreateEntity no debe usarse. La l贸gica de creaci贸n as铆ncrona reside en el m茅todo Handle.");
     }
 }

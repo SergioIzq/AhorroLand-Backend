@@ -1,20 +1,21 @@
-using AhorroLand.Domain;
+Ôªøusing AhorroLand.Domain;
 using AhorroLand.Shared.Application.Abstractions.Messaging.Abstracts.Commands;
 using AhorroLand.Shared.Application.Abstractions.Servicies;
 using AhorroLand.Shared.Application.Dtos;
 using AhorroLand.Shared.Domain.Interfaces;
 using AhorroLand.Shared.Domain.Interfaces.Repositories;
+using AhorroLand.Shared.Domain.ValueObjects.Ids;
 
 namespace AhorroLand.Application.Features.Traspasos.Commands;
 
 public sealed class UpdateTraspasoCommandHandler
-    : AbsUpdateCommandHandler<Traspaso, TraspasoDto, UpdateTraspasoCommand>
+    : AbsUpdateCommandHandler<Traspaso, TraspasoId, TraspasoDto, UpdateTraspasoCommand>
 {
     public UpdateTraspasoCommandHandler(
         IUnitOfWork unitOfWork,
-        IWriteRepository<Traspaso> writeRepository,
+        IWriteRepository<Traspaso, TraspasoId> writeRepository,
    ICacheService cacheService,
-        IReadRepositoryWithDto<Traspaso, TraspasoDto> readOnlyRepository
+        IReadRepositoryWithDto<Traspaso, TraspasoDto, TraspasoId> readOnlyRepository
         )
         : base(unitOfWork, writeRepository, cacheService)
     {
@@ -22,11 +23,11 @@ public sealed class UpdateTraspasoCommandHandler
 
     protected override void ApplyChanges(Traspaso entity, UpdateTraspasoCommand command)
     {
-        // Nota: Traspaso tiene propiedades readonly, por lo que esta operaciÛn
-        // podrÌa requerir recrear la entidad o usar reflexiÛn.
+        // Nota: Traspaso tiene propiedades readonly, por lo que esta operaci√≥n
+        // podr√≠a requerir recrear la entidad o usar reflexi√≥n.
         // Por ahora, este handler existe para completitud de la API pero
-        // la entidad de dominio deberÌa implementar un mÈtodo Update si se requiere.
-        throw new NotSupportedException("La actualizaciÛn de traspasos no est· soportada por el modelo de dominio actual.");
+        // la entidad de dominio deber√≠a implementar un m√©todo Update si se requiere.
+        throw new NotSupportedException("La actualizaci√≥n de traspasos no est√° soportada por el modelo de dominio actual.");
     }
 }
 

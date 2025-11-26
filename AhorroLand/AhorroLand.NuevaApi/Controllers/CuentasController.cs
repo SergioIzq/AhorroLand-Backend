@@ -1,7 +1,6 @@
 using AhorroLand.Application.Features.Cuentas.Commands;
 using AhorroLand.Application.Features.Cuentas.Queries;
 using AhorroLand.Application.Features.Cuentas.Queries.Recent;
-using AhorroLand.Application.Features.Cuentas.Queries.Search;
 using AhorroLand.NuevaApi.Controllers.Base;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
@@ -103,7 +102,7 @@ public class CuentasController : AbsController
       return HandleResultForCreation(
       result,
          nameof(GetById),
-        new { id = result.Value.Id }
+        new { id = result.Value }
       );
   }
 

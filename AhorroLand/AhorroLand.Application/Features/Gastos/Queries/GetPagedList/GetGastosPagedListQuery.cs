@@ -1,13 +1,14 @@
 ﻿using AhorroLand.Domain;
 using AhorroLand.Shared.Application.Abstractions.Messaging.Abstracts.Queries;
 using AhorroLand.Shared.Application.Dtos;
+using AhorroLand.Shared.Domain.ValueObjects.Ids;
 
 namespace AhorroLand.Application.Features.Gastos.Queries;
 
 /// <summary>
 /// Representa la consulta para obtener una lista paginada de Gastos con búsqueda y ordenamiento.
 /// </summary>
-public sealed record GetGastosPagedListQuery : AbsGetPagedListQuery<Gasto, GastoDto>
+public sealed record GetGastosPagedListQuery : AbsGetPagedListQuery<Gasto, GastoId, GastoDto>
 {
     public string? SearchTerm { get; init; }
     public string? SortColumn { get; init; }

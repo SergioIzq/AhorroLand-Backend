@@ -1,4 +1,5 @@
 ﻿using AhorroLand.Shared.Domain.Abstractions;
+using AhorroLand.Shared.Domain.Interfaces;
 
 namespace AhorroLand.Shared.Application.Abstractions.Messaging.Abstracts.Interfaces;
 
@@ -8,8 +9,9 @@ namespace AhorroLand.Shared.Application.Abstractions.Messaging.Abstracts.Interfa
 /// Los handlers usan IReadRepositoryWithDto directamente para consultas optimizadas.
 /// </summary>
 /// <typeparam name="TEntity">La entidad raíz que maneja el handler.</typeparam>
-public interface IQueryHandlerBase<TEntity>
-    where TEntity : AbsEntity
+public interface IQueryHandlerBase<TEntity, TId>
+    where TEntity : AbsEntity<TId>
+    where TId : IGuidValueObject
 {
     // Interfaz vacía - solo sirve como marcador de tipo
 }

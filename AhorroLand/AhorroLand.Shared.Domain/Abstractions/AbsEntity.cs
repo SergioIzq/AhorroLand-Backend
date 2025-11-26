@@ -2,18 +2,18 @@
 
 namespace AhorroLand.Shared.Domain.Abstractions;
 
-public abstract class AbsEntity
+public abstract class AbsEntity<TId> where TId : IGuidValueObject
 {
     // 🔥 OPTIMIZACIÓN: Usar List con capacidad inicial para evitar resizes
     private List<IDomainEvent>? _domainEvents;
 
-    protected AbsEntity(Guid id)
+    protected AbsEntity(TId id)
     {
         Id = id;
         FechaCreacion = DateTime.Now;
     }
 
-    public virtual Guid Id { get; init; }
+    public virtual TId Id { get; init; }
     public virtual DateTime FechaCreacion { get; init; }
 
     // --- Gestión de Eventos de Dominio ---

@@ -1,24 +1,25 @@
-using AhorroLand.Domain;
+Ôªøusing AhorroLand.Domain;
 using AhorroLand.Shared.Application.Abstractions.Messaging.Abstracts.Commands;
 using AhorroLand.Shared.Application.Abstractions.Servicies;
 using AhorroLand.Shared.Application.Dtos;
 using AhorroLand.Shared.Domain.Interfaces;
 using AhorroLand.Shared.Domain.Interfaces.Repositories;
 using AhorroLand.Shared.Domain.ValueObjects;
+using AhorroLand.Shared.Domain.ValueObjects.Ids;
 
 namespace AhorroLand.Application.Features.Categorias.Commands;
 
 /// <summary>
-/// Maneja la creaciÛn de una nueva entidad Categoria.
+/// Maneja la creaci√≥n de una nueva entidad Categoria.
 /// </summary>
 public sealed class UpdateCategoriaCommandHandler
-    : AbsUpdateCommandHandler<Categoria, CategoriaDto, UpdateCategoriaCommand>
+    : AbsUpdateCommandHandler<Categoria, CategoriaId, CategoriaDto, UpdateCategoriaCommand>
 {
     public UpdateCategoriaCommandHandler(
         IUnitOfWork unitOfWork,
-        IWriteRepository<Categoria> writeRepository,
+        IWriteRepository<Categoria, CategoriaId> writeRepository,
         ICacheService cacheService,
-        IReadRepositoryWithDto<Categoria, CategoriaDto> readOnlyRepository
+        IReadRepositoryWithDto<Categoria, CategoriaDto, CategoriaId> readOnlyRepository
         )
         : base(unitOfWork, writeRepository, cacheService)
     {
@@ -27,12 +28,12 @@ public sealed class UpdateCategoriaCommandHandler
     protected override void ApplyChanges(Categoria entity, UpdateCategoriaCommand command)
     {
         // 1. Crear el Value Object 'Nombre' a partir del string del comando.
-        // Esto autom·ticamente ejecuta las reglas de validaciÛn del nombre.
+        // Esto autom√°ticamente ejecuta las reglas de validaci√≥n del nombre.
         var nuevoNombreVO = new Nombre(command.Nombre);
         var nuevADescVO = new Descripcion(command.Descripcion ?? string.Empty);
 
-        // 2. Ejecutar el mÈtodo de dominio para actualizar la entidad.
-        // **La entidad (Categoria) es responsable de su propia actualizaciÛn.**
+        // 2. Ejecutar el m√©todo de dominio para actualizar la entidad.
+        // **La entidad (Categoria) es responsable de su propia actualizaci√≥n.**
         entity.Update(
             nuevoNombreVO,
             nuevADescVO

@@ -1,10 +1,11 @@
-using AhorroLand.Domain;
+﻿using AhorroLand.Domain;
 using AhorroLand.Shared.Application.Abstractions.Messaging.Abstracts.Commands;
 using AhorroLand.Shared.Application.Dtos;
+using AhorroLand.Shared.Domain.ValueObjects.Ids;
 
 namespace AhorroLand.Application.Features.IngresosProgramados.Commands;
 
-public sealed record UpdateIngresoProgramadoCommand : AbsUpdateCommand<IngresoProgramado, IngresoProgramadoDto>
+public sealed record UpdateIngresoProgramadoCommand : AbsUpdateCommand<IngresoProgramado, IngresoProgramadoId, IngresoProgramadoDto>
 {
     public required decimal Importe { get; init; }
     public required string Frecuencia { get; init; }

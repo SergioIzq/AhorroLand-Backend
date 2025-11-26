@@ -10,7 +10,7 @@ namespace AhorroLand.Infrastructure.Persistence.Command.Configurations.Configura
     {
         public void Configure(EntityTypeBuilder<Usuario> builder)
         {
-            builder.ToTable("usuario");
+            builder.ToTable("usuarios");
             builder.HasKey(e => e.Id);
             builder.Property(e => e.Id).HasColumnName("id").ValueGeneratedOnAdd();
 

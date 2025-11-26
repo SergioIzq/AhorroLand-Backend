@@ -1,6 +1,6 @@
 ﻿using AhorroLand.Domain;
 using AhorroLand.Shared.Application.Dtos;
-using AhorroLand.Shared.Domain.ValueObjects;
+using AhorroLand.Shared.Domain.ValueObjects.Ids;
 using Mapster;
 using MapsterMapper;
 using Microsoft.Extensions.DependencyInjection;

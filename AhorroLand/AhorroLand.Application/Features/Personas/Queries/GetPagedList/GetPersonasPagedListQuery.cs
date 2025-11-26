@@ -1,6 +1,7 @@
 ﻿using AhorroLand.Domain;
 using AhorroLand.Shared.Application.Abstractions.Messaging.Abstracts.Queries;
 using AhorroLand.Shared.Application.Dtos;
+using AhorroLand.Shared.Domain.ValueObjects.Ids;
 
 namespace AhorroLand.Application.Features.Personas.Queries;
 
@@ -14,4 +15,4 @@ public sealed record GetPersonasPagedListQuery(
     string? SearchTerm = null,
     string? SortColumn = null,
     string? SortOrder = null
-) : AbsGetPagedListQuery<Persona, PersonaDto>(Page, PageSize);
+) : AbsGetPagedListQuery<Persona, PersonaId, PersonaDto>(Page, PageSize);

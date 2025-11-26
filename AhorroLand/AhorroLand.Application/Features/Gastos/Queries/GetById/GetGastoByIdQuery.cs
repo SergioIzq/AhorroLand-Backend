@@ -1,6 +1,7 @@
 ﻿using AhorroLand.Domain;
 using AhorroLand.Shared.Application.Abstractions.Messaging.Abstracts.Queries;
 using AhorroLand.Shared.Application.Dtos;
+using AhorroLand.Shared.Domain.ValueObjects.Ids;
 
 namespace AhorroLand.Application.Features.Gastos.Queries;
 
@@ -8,6 +9,6 @@ namespace AhorroLand.Application.Features.Gastos.Queries;
 /// Representa la solicitud para crear un nuevo Gasto.
 /// </summary>
 // Hereda de AbsCreateCommand<Entidad, DTO de Respuesta>
-public sealed record GetGastoByIdQuery(Guid Id) : AbsGetByIdQuery<Gasto, GastoDto>(Id)
+public sealed record GetGastoByIdQuery(Guid Id) : AbsGetByIdQuery<Gasto, GastoId, GastoDto>(Id)
 {
 }

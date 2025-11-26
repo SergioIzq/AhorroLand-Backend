@@ -4,6 +4,7 @@ using AhorroLand.Shared.Application.Abstractions.Servicies;
 using AhorroLand.Shared.Application.Dtos;
 using AhorroLand.Shared.Domain.Interfaces.Repositories;
 using AhorroLand.Shared.Domain.Results;
+using AhorroLand.Shared.Domain.ValueObjects.Ids;
 
 namespace AhorroLand.Application.Features.Clientes.Queries;
 
@@ -11,10 +12,10 @@ namespace AhorroLand.Application.Features.Clientes.Queries;
 /// Manejador concreto para la consulta de lista paginada de Clientes.
 /// </summary>
 public sealed class GetClientesPagedListQueryHandler
-    : GetPagedListQueryHandler<Cliente, ClienteDto, GetClientesPagedListQuery>
+    : GetPagedListQueryHandler<Cliente, ClienteId, ClienteDto, GetClientesPagedListQuery>
 {
     public GetClientesPagedListQueryHandler(
-        IReadRepositoryWithDto<Cliente, ClienteDto> clienteRepository,
+        IReadRepositoryWithDto<Cliente, ClienteDto, ClienteId> clienteRepository,
         ICacheService cacheService)
         : base(clienteRepository, cacheService)
     {

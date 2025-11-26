@@ -1,9 +1,11 @@
 ﻿using AhorroLand.Shared.Domain.Abstractions;
+using AhorroLand.Shared.Domain.Interfaces;
 using AhorroLand.Shared.Domain.Interfaces.Repositories;
 using AhorroLand.Shared.Domain.Results;
 using Dapper;
 using Microsoft.Extensions.Caching.Distributed;
 using System.Text.Json;
+using AhorroLand.Shared.Domain.ValueObjects.Ids;
 
 namespace AhorroLand.Infrastructure.Persistence.Query
 {
@@ -14,9 +16,10 @@ namespace AhorroLand.Infrastructure.Persistence.Query
     /// </summary>
     /// <typeparam name="T">La entidad que debe heredar de AbsEntity</typeparam>
     /// <typeparam name="TReadModel">El modelo de lectura (DTO plano para Dapper)</typeparam>
-    public abstract class AbsReadRepository<T, TReadModel> : IReadRepositoryWithDto<T, TReadModel>
-  where T : AbsEntity
-    where TReadModel : class
+    public abstract class AbsReadRepository<T, TReadModel, TId> : IReadRepositoryWithDto<T, TReadModel, TId>
+        where T : AbsEntity<TId>
+        where TReadModel : class
+        where TId : IGuidValueObject
     {
         protected readonly IDbConnectionFactory _dbConnectionFactory;
         protected readonly string _tableName;

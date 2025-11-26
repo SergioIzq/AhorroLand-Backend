@@ -1,4 +1,5 @@
-using AhorroLand.Shared.Application.Dtos;
+ï»¿using AhorroLand.Shared.Application.Dtos;
+using AhorroLand.Shared.Domain.ValueObjects.Ids;
 
 namespace AhorroLand.Application.Interfaces;
 
@@ -11,11 +12,11 @@ public interface IDashboardRepository
     /// Obtiene el resumen completo del dashboard para un usuario con filtros opcionales.
     /// </summary>
     /// <param name="usuarioId">ID del usuario</param>
-    /// <param name="fechaInicio">Fecha de inicio del período (opcional, default: primer día del mes actual)</param>
-    /// <param name="fechaFin">Fecha de fin del período (opcional, default: último día del mes actual)</param>
-    /// <param name="cuentaId">Filtrar por cuenta específica (opcional)</param>
-    /// <param name="categoriaId">Filtrar por categoría específica (opcional)</param>
-    /// <param name="cancellationToken">Token de cancelación</param>
+    /// <param name="fechaInicio">Fecha de inicio del perÃ­odo (opcional, default: primer dÃ­a del mes actual)</param>
+    /// <param name="fechaFin">Fecha de fin del perÃ­odo (opcional, default: Ãºltimo dÃ­a del mes actual)</param>
+    /// <param name="cuentaId">Filtrar por cuenta especÃ­fica (opcional)</param>
+    /// <param name="categoriaId">Filtrar por categorÃ­a especÃ­fica (opcional)</param>
+    /// <param name="cancellationToken">Token de cancelaciÃ³n</param>
     Task<DashboardResumenDto?> GetDashboardResumenAsync(
         Guid usuarioId,
         DateTime? fechaInicio = null,

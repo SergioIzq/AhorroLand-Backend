@@ -1,6 +1,7 @@
 ﻿using AhorroLand.Domain;
 using AhorroLand.Shared.Application.Abstractions.Messaging.Abstracts.Commands;
 using AhorroLand.Shared.Application.Dtos;
+using AhorroLand.Shared.Domain.ValueObjects.Ids;
 
 namespace AhorroLand.Application.Features.Cuentas.Commands;
 
@@ -8,7 +9,7 @@ namespace AhorroLand.Application.Features.Cuentas.Commands;
 /// Representa la solicitud para actualizar una nueva cuenta.
 /// </summary>
 // Hereda de AbsUpadteCommand<Entidad, DTO de Respuesta>
-public sealed record UpdateCuentaCommand : AbsUpdateCommand<Cuenta, CuentaDto>
+public sealed record UpdateCuentaCommand : AbsUpdateCommand<Cuenta, CuentaId, CuentaDto>
 {
     /// <summary>
     /// Nombre de la nueva cuenta.

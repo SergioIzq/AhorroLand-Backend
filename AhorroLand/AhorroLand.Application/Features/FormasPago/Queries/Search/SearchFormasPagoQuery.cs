@@ -1,13 +1,14 @@
-using AhorroLand.Domain;
+ï»¿using AhorroLand.Domain;
 using AhorroLand.Shared.Application.Abstractions.Messaging.Abstracts.Queries;
 using AhorroLand.Shared.Application.Dtos;
+using AhorroLand.Shared.Domain.ValueObjects.Ids;
 
 namespace AhorroLand.Application.Features.FormasPago.Queries.Search;
 
 /// <summary>
-/// Query para búsqueda rápida de formas de pago (autocomplete).
+/// Query para bÃºsqueda rÃ¡pida de formas de pago (autocomplete).
 /// </summary>
-public sealed record SearchFormasPagoQuery : SearchForAutocompleteQuery<FormaPago, FormaPagoDto>
+public sealed record SearchFormasPagoQuery : SearchForAutocompleteQuery<FormaPago, FormaPagoDto, FormaPagoId>
 {
     public SearchFormasPagoQuery(string searchTerm, int limit = 10)
         : base(searchTerm, limit)

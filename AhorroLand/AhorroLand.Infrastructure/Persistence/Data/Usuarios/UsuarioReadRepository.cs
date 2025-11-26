@@ -3,10 +3,11 @@ using AhorroLand.Infrastructure.Persistence.Query;
 using AhorroLand.Shared.Application.Dtos;
 using AhorroLand.Shared.Domain.ValueObjects;
 using Dapper;
+using AhorroLand.Shared.Domain.ValueObjects.Ids;
 
 namespace AhorroLand.Infrastructure.Persistence.Data.Usuarios;
 
-public sealed class UsuarioReadRepository : AbsReadRepository<Usuario, UsuarioDto>, IUsuarioReadRepository
+public sealed class UsuarioReadRepository : AbsReadRepository<Usuario, UsuarioDto, UsuarioId>, IUsuarioReadRepository
 {
     public UsuarioReadRepository(IDbConnectionFactory connectionFactory)
         : base(connectionFactory, "usuarios")

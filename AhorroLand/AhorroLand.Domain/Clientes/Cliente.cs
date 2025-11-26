@@ -1,16 +1,19 @@
 ﻿using AhorroLand.Shared.Domain.Abstractions;
 using AhorroLand.Shared.Domain.ValueObjects;
+using AhorroLand.Shared.Domain.ValueObjects.Ids;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace AhorroLand.Domain;
 
-public sealed class Cliente : AbsEntity
+[Table("clientes")]
+public sealed class Cliente : AbsEntity<ClienteId>
 {
-    public Cliente() : base(Guid.Empty)
+    public Cliente() : base(new ClienteId(Guid.Empty))
     {
 
     }
 
-    private Cliente(Guid id, Nombre nombre, UsuarioId usuarioId) : base(id)
+    private Cliente(ClienteId id, Nombre nombre, UsuarioId usuarioId) : base(id)
     {
         Nombre = nombre;
         UsuarioId = usuarioId;
@@ -21,7 +24,7 @@ public sealed class Cliente : AbsEntity
 
     public static Cliente Create(Nombre nombre, UsuarioId usuarioId)
     {
-        var cliente = new Cliente(Guid.NewGuid(), nombre, usuarioId);
+        var cliente = new Cliente(new ClienteId(Guid.NewGuid()), nombre, usuarioId);
 
         return cliente;
     }

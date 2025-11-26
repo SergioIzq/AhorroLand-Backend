@@ -2,11 +2,12 @@
 using AhorroLand.Infrastructure.Persistence.Query;
 using AhorroLand.Shared.Application.Dtos;
 using AhorroLand.Shared.Domain.ValueObjects;
+using AhorroLand.Shared.Domain.ValueObjects.Ids;
 using Dapper;
 
 namespace AhorroLand.Infrastructure.Persistence.Data.Categorias
 {
-    public class CategoriaReadRepository : AbsReadRepository<Categoria, CategoriaDto>, ICategoriaReadRepository
+    public class CategoriaReadRepository : AbsReadRepository<Categoria, CategoriaDto, CategoriaId>, ICategoriaReadRepository
     {
         public CategoriaReadRepository(IDbConnectionFactory dbConnectionFactory)
    : base(dbConnectionFactory, "categorias")

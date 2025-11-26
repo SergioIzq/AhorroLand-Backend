@@ -1,4 +1,4 @@
-using AhorroLand.Shared.Domain.ValueObjects;
+using AhorroLand.Shared.Domain.ValueObjects.Ids;
 using Dapper;
 
 namespace AhorroLand.Infrastructure.TypesHandlers

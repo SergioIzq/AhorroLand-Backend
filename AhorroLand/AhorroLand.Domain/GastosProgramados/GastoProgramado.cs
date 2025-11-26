@@ -2,17 +2,20 @@
 using AhorroLand.Shared.Domain.Abstractions;
 using AhorroLand.Shared.Domain.Abstractions.Results;
 using AhorroLand.Shared.Domain.ValueObjects;
+using AhorroLand.Shared.Domain.ValueObjects.Ids;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace AhorroLand.Domain;
 
-public sealed class GastoProgramado : AbsEntity
+[Table("gastos_programados")]
+public sealed class GastoProgramado : AbsEntity<GastoProgramadoId>
 {
-    private GastoProgramado() : base(Guid.Empty)
+    private GastoProgramado() : base(new GastoProgramadoId(Guid.Empty))
     {
     }
 
     private GastoProgramado(
-        Guid id,
+        GastoProgramadoId id,
         Cantidad importe,
         DateTime fechaEjecucion,
         ConceptoId conceptoId,
@@ -69,7 +72,7 @@ public sealed class GastoProgramado : AbsEntity
         Descripcion? descripcion = null)
     {
         var gasto = new GastoProgramado(
-            Guid.NewGuid(),
+            new GastoProgramadoId(Guid.NewGuid()),
             importe,
             fechaEjecucion,
             conceptoId,
@@ -84,7 +87,7 @@ public sealed class GastoProgramado : AbsEntity
 
         // 🔥 LANZAR EVENTO DE DOMINIO
         gasto.AddDomainEvent(new GastoProgramadoCreadoEvent(
-            gasto.Id,
+            gasto.Id.Value,
             frecuencia,
             fechaEjecucion
         ));

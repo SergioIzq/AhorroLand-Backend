@@ -1,5 +1,6 @@
 ﻿using AhorroLand.Shared.Domain.Abstractions;
 using AhorroLand.Shared.Domain.Abstractions.Results;
+using AhorroLand.Shared.Domain.Interfaces;
 
 namespace AhorroLand.Shared.Application.Abstractions.Messaging.Abstracts.Interfaces;
 
@@ -8,8 +9,9 @@ namespace AhorroLand.Shared.Application.Abstractions.Messaging.Abstracts.Interfa
 /// Define los contratos para las operaciones de escritura CUD (Create, Update, Delete).
 /// </summary>
 /// <typeparam name="TEntity">El tipo de entidad que el command handler manipula, debe heredar de AbsEntity.</typeparam>
-public interface IAbsCommandHandlerBase<TEntity>
-    where TEntity : AbsEntity
+public interface IAbsCommandHandlerBase<TEntity, TId>
+    where TEntity : AbsEntity<TId>
+    where TId : IGuidValueObject
 {
     /// <summary>
     /// Crea una nueva entidad y persiste los cambios.

@@ -1,18 +1,19 @@
-using AhorroLand.Domain;
+﻿using AhorroLand.Domain;
 using AhorroLand.Shared.Application.Abstractions.Messaging.Abstracts.Commands;
 using AhorroLand.Shared.Application.Abstractions.Servicies;
 using AhorroLand.Shared.Application.Dtos;
 using AhorroLand.Shared.Domain.Interfaces;
 using AhorroLand.Shared.Domain.Interfaces.Repositories;
 using AhorroLand.Shared.Domain.ValueObjects;
+using AhorroLand.Shared.Domain.ValueObjects.Ids;
 
 namespace AhorroLand.Application.Features.Personas.Commands;
 
-public sealed class CreatePersonaCommandHandler : AbsCreateCommandHandler<Persona, PersonaDto, CreatePersonaCommand>
+public sealed class CreatePersonaCommandHandler : AbsCreateCommandHandler<Persona, PersonaId, CreatePersonaCommand>
 {
     public CreatePersonaCommandHandler(
     IUnitOfWork unitOfWork,
-    IWriteRepository<Persona> writeRepository,
+    IWriteRepository<Persona, PersonaId> writeRepository,
     ICacheService cacheService)
     : base(unitOfWork, writeRepository, cacheService)
     {

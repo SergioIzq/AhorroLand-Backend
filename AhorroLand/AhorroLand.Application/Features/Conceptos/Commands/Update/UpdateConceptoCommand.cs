@@ -1,6 +1,7 @@
 ﻿using AhorroLand.Domain;
 using AhorroLand.Shared.Application.Abstractions.Messaging.Abstracts.Commands;
 using AhorroLand.Shared.Application.Dtos;
+using AhorroLand.Shared.Domain.ValueObjects.Ids;
 
 namespace AhorroLand.Application.Features.Conceptos.Commands;
 
@@ -8,7 +9,7 @@ namespace AhorroLand.Application.Features.Conceptos.Commands;
 /// Representa la solicitud para actualizar un nuevo concepto.
 /// </summary>
 // Hereda de AbsUpadteCommand<Entidad, DTO de Respuesta>
-public sealed record UpdateConceptoCommand : AbsUpdateCommand<Concepto, ConceptoDto>
+public sealed record UpdateConceptoCommand : AbsUpdateCommand<Concepto, ConceptoId, ConceptoDto>
 {
     /// <summary>
     /// Nombre del nuevo concepto.

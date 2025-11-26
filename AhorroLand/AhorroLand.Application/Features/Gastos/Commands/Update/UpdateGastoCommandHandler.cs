@@ -1,25 +1,26 @@
-using AhorroLand.Domain;
+﻿using AhorroLand.Domain;
 using AhorroLand.Shared.Application.Abstractions.Messaging.Abstracts.Commands;
 using AhorroLand.Shared.Application.Abstractions.Servicies;
 using AhorroLand.Shared.Application.Dtos;
 using AhorroLand.Shared.Domain.Interfaces;
 using AhorroLand.Shared.Domain.Interfaces.Repositories;
 using AhorroLand.Shared.Domain.ValueObjects;
+using AhorroLand.Shared.Domain.ValueObjects.Ids;
 
 namespace AhorroLand.Application.Features.Gastos.Commands;
 
 /// <summary>
-/// Maneja la creaci�n de una nueva entidad Gasto.
+/// Maneja la creación de una nueva entidad Gasto.
 /// </summary>
 public sealed class UpdateGastoCommandHandler
-    : AbsUpdateCommandHandler<Gasto, GastoDto, UpdateGastoCommand>
+    : AbsUpdateCommandHandler<Gasto, GastoId, GastoDto, UpdateGastoCommand>
 {
     private readonly IDomainValidator _validator;
     public UpdateGastoCommandHandler(
         IUnitOfWork unitOfWork,
-        IWriteRepository<Gasto> writeRepository,
+        IWriteRepository<Gasto, GastoId> writeRepository,
         ICacheService cacheService,
-        IReadRepositoryWithDto<Gasto, GastoDto> readOnlyRepository,
+        IReadRepositoryWithDto<Gasto, GastoDto, GastoId> readOnlyRepository,
         IDomainValidator validator
         )
         : base(unitOfWork, writeRepository, cacheService)
@@ -43,12 +44,12 @@ public sealed class UpdateGastoCommandHandler
 
         var existenceTasks = new List<Task<bool>>
         {
-            _validator.ExistsAsync<Concepto>(command.ConceptoId),
-            _validator.ExistsAsync<Categoria>(command.CategoriaId),
-            _validator.ExistsAsync<Cuenta>(command.CuentaId),
-            _validator.ExistsAsync<FormaPago>(command.FormaPagoId),
-            _validator.ExistsAsync<Proveedor>(command.ProveedorId),
-            _validator.ExistsAsync<Persona>(command.PersonaId)
+            _validator.ExistsAsync < Concepto, ConceptoId >(new ConceptoId(command.ConceptoId)),
+            _validator.ExistsAsync < Categoria, CategoriaId >(new CategoriaId(command.CategoriaId)),
+            _validator.ExistsAsync < Cuenta, CuentaId >(new CuentaId(command.CuentaId)),
+            _validator.ExistsAsync < FormaPago, FormaPagoId >(new FormaPagoId(command.FormaPagoId)),
+            _validator.ExistsAsync < Proveedor, ProveedorId >(new ProveedorId(command.ProveedorId)),
+            _validator.ExistsAsync < Persona, PersonaId >(new PersonaId(command.PersonaId))
         };
 
         entity.Update(

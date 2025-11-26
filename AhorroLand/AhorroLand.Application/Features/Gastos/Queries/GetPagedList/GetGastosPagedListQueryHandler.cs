@@ -4,6 +4,7 @@ using AhorroLand.Shared.Application.Abstractions.Servicies;
 using AhorroLand.Shared.Application.Dtos;
 using AhorroLand.Shared.Domain.Interfaces.Repositories;
 using AhorroLand.Shared.Domain.Results;
+using AhorroLand.Shared.Domain.ValueObjects.Ids;
 
 namespace AhorroLand.Application.Features.Gastos.Queries;
 
@@ -12,10 +13,10 @@ namespace AhorroLand.Application.Features.Gastos.Queries;
 /// Implementa la lógica específica de filtrado, búsqueda y ordenación.
 /// </summary>
 public sealed class GetGastosPagedListQueryHandler
-    : GetPagedListQueryHandler<Gasto, GastoDto, GetGastosPagedListQuery>
+    : GetPagedListQueryHandler<Gasto, GastoId, GastoDto, GetGastosPagedListQuery>
 {
     public GetGastosPagedListQueryHandler(
-        IReadRepositoryWithDto<Gasto, GastoDto> gastoRepository,
+        IReadRepositoryWithDto<Gasto, GastoDto, GastoId> gastoRepository,
         ICacheService cacheService)
         : base(gastoRepository, cacheService)
     {

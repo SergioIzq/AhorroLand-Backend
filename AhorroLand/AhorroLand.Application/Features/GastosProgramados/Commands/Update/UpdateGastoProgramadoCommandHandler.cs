@@ -1,20 +1,21 @@
-using AhorroLand.Domain;
+ï»¿using AhorroLand.Domain;
 using AhorroLand.Shared.Application.Abstractions.Messaging.Abstracts.Commands;
 using AhorroLand.Shared.Application.Abstractions.Servicies;
 using AhorroLand.Shared.Application.Dtos;
 using AhorroLand.Shared.Domain.Interfaces;
 using AhorroLand.Shared.Domain.Interfaces.Repositories;
+using AhorroLand.Shared.Domain.ValueObjects.Ids;
 
 namespace AhorroLand.Application.Features.GastosProgramados.Commands;
 
 public sealed class UpdateGastoProgramadoCommandHandler
-  : AbsUpdateCommandHandler<GastoProgramado, GastoProgramadoDto, UpdateGastoProgramadoCommand>
+  : AbsUpdateCommandHandler<GastoProgramado, GastoProgramadoId, GastoProgramadoDto, UpdateGastoProgramadoCommand>
 {
     public UpdateGastoProgramadoCommandHandler(
  IUnitOfWork unitOfWork,
-        IWriteRepository<GastoProgramado> writeRepository,
+        IWriteRepository<GastoProgramado, GastoProgramadoId> writeRepository,
         ICacheService cacheService,
-        IReadRepositoryWithDto<GastoProgramado, GastoProgramadoDto> readOnlyRepository
+        IReadRepositoryWithDto<GastoProgramado, GastoProgramadoDto, GastoProgramadoId> readOnlyRepository
       )
         : base(unitOfWork, writeRepository, cacheService)
     {
@@ -22,9 +23,9 @@ public sealed class UpdateGastoProgramadoCommandHandler
 
     protected override void ApplyChanges(GastoProgramado entity, UpdateGastoProgramadoCommand command)
     {
-        // Nota: Si la entidad GastoProgramado no tiene un método Update,
-        // esta implementación debería agregarse al modelo de dominio.
-        throw new NotSupportedException("La actualización de gastos programados requiere implementación en el modelo de dominio.");
+        // Nota: Si la entidad GastoProgramado no tiene un mÃ©todo Update,
+        // esta implementaciÃ³n deberÃ­a agregarse al modelo de dominio.
+        throw new NotSupportedException("La actualizaciÃ³n de gastos programados requiere implementaciÃ³n en el modelo de dominio.");
     }
 }
 

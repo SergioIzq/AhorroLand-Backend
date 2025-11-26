@@ -1,9 +1,10 @@
-using AhorroLand.Shared.Application.Abstractions.Messaging;
+Ôªøusing AhorroLand.Shared.Application.Abstractions.Messaging;
+using AhorroLand.Shared.Domain.ValueObjects.Ids;
 
 namespace AhorroLand.Application.Features.GastosProgramados.Commands.Execute;
 
 /// <summary>
-/// Comando que Hangfire ejecutar· para crear un Gasto real desde un GastoProgramado.
-/// Este comando es la uniÛn entre la programaciÛn (Hangfire) y la lÛgica de negocio (CQRS).
+/// Comando que Hangfire ejecutar√° para crear un Gasto real desde un GastoProgramado.
+/// Este comando es la uni√≥n entre la programaci√≥n (Hangfire) y la l√≥gica de negocio (CQRS).
 /// </summary>
 public sealed record ExecuteGastoProgramadoCommand(Guid GastoProgramadoId) : ICommand;

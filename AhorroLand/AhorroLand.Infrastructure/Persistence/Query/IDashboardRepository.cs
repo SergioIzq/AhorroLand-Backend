@@ -1,4 +1,5 @@
-using AhorroLand.Shared.Application.Dtos;
+﻿using AhorroLand.Shared.Application.Dtos;
+using AhorroLand.Shared.Domain.ValueObjects.Ids;
 
 namespace AhorroLand.Infrastructure.Persistence.Query;
 

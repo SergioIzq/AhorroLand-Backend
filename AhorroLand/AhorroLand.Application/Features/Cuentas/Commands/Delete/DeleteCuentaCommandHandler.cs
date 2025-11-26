@@ -1,21 +1,22 @@
-using AhorroLand.Domain;
+ï»¿using AhorroLand.Domain;
 using AhorroLand.Shared.Application.Abstractions.Messaging.Abstracts.Commands;
 using AhorroLand.Shared.Application.Abstractions.Servicies;
 using AhorroLand.Shared.Domain.Interfaces;
 using AhorroLand.Shared.Domain.Interfaces.Repositories;
+using AhorroLand.Shared.Domain.ValueObjects.Ids;
 
 namespace AhorroLand.Application.Features.Cuentas.Commands;
 
 /// <summary>
 /// Manejador concreto para eliminar una Cuenta.
-/// Hereda toda la lógica de la clase base genérica.
+/// Hereda toda la lÃ³gica de la clase base genÃ©rica.
 /// </summary>
 public sealed class DeleteCuentaCommandHandler
-    : DeleteCommandHandler<Cuenta, DeleteCuentaCommand>
+    : DeleteCommandHandler<Cuenta, CuentaId, DeleteCuentaCommand>
 {
     public DeleteCuentaCommandHandler(
         IUnitOfWork unitOfWork,
-        IWriteRepository<Cuenta> writeRepository,
+        IWriteRepository<Cuenta, CuentaId> writeRepository,
         ICacheService cacheService)
         : base(unitOfWork, writeRepository, cacheService)
     {

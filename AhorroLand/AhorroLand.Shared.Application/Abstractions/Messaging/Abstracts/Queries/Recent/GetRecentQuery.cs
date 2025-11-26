@@ -1,5 +1,6 @@
 using AhorroLand.Shared.Domain.Abstractions;
 using AhorroLand.Shared.Domain.Abstractions.Results;
+using AhorroLand.Shared.Domain.Interfaces;
 using MediatR;
 
 namespace AhorroLand.Shared.Application.Abstractions.Messaging.Abstracts.Queries;
@@ -9,9 +10,10 @@ namespace AhorroLand.Shared.Application.Abstractions.Messaging.Abstracts.Queries
 /// Diseñada para ser ultra-rápida (<10ms) con resultados limitados.
 /// Ideal para pre-cargar selectores con los elementos usados recientemente.
 /// </summary>
-public abstract record GetRecentQuery<TEntity, TDto> : IRequest<Result<IEnumerable<TDto>>>
-    where TEntity : AbsEntity
+public abstract record GetRecentQuery<TEntity, TDto, TId> : IRequest<Result<IEnumerable<TDto>>>
+    where TEntity : AbsEntity<TId>
     where TDto : class
+    where TId: IGuidValueObject
 {
     public Guid? UsuarioId { get; init; }
     public int Limit { get; init; }

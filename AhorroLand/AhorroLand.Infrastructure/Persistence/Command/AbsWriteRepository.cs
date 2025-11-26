@@ -1,9 +1,12 @@
 ﻿using AhorroLand.Infrastructure.Persistence.Command;
 using AhorroLand.Shared.Domain.Abstractions;
+using AhorroLand.Shared.Domain.Interfaces;
 using AhorroLand.Shared.Domain.Interfaces.Repositories;
 using Microsoft.EntityFrameworkCore;
 
-public abstract class AbsWriteRepository<T> : IWriteRepository<T> where T : AbsEntity
+public abstract class AbsWriteRepository<T, TId> : IWriteRepository<T, TId> 
+    where T : AbsEntity<TId>
+    where TId : IGuidValueObject
 {
     protected readonly AhorroLandDbContext _context;
 
@@ -22,7 +25,7 @@ public abstract class AbsWriteRepository<T> : IWriteRepository<T> where T : AbsE
         // Buscar la entidad con tracking habilitado para que los cambios se detecten
         return await _context.Set<T>()
             .AsTracking()
-            .FirstOrDefaultAsync(e => e.Id == id, cancellationToken);
+            .FirstOrDefaultAsync(e => e.Id.Value == id, cancellationToken);
     }
 
     public virtual void Add(T entity)
@@ -41,12 +44,12 @@ public abstract class AbsWriteRepository<T> : IWriteRepository<T> where T : AbsE
     public virtual void Update(T entity)
     {
         // Verificar si la entidad existe en la base de datos
-        var exists = _context.Set<T>().Any(e => e.Id == entity.Id);
+        var exists = _context.Set<T>().Any(e => e.Id.Value == entity.Id.Value);
 
         if (!exists)
         {
             throw new InvalidOperationException(
-                $"No se puede actualizar la entidad {typeof(T).Name} con Id '{entity.Id}' porque no existe en la base de datos.");
+                $"No se puede actualizar la entidad {typeof(T).Name} con Id '{entity.Id.Value}' porque no existe en la base de datos.");
         }
 
         _context.Set<T>().Update(entity);
@@ -58,12 +61,12 @@ public abstract class AbsWriteRepository<T> : IWriteRepository<T> where T : AbsE
     public virtual async Task UpdateAsync(T entity, CancellationToken cancellationToken = default)
     {
         // Verificar si la entidad existe en la base de datos
-        var exists = await _context.Set<T>().AnyAsync(e => e.Id == entity.Id, cancellationToken);
+        var exists = await _context.Set<T>().AnyAsync(e => e.Id.Value == entity.Id.Value, cancellationToken);
 
         if (!exists)
         {
             throw new InvalidOperationException(
-                $"No se puede actualizar la entidad {typeof(T).Name} con Id '{entity.Id}' porque no existe en la base de datos.");
+                $"No se puede actualizar la entidad {typeof(T).Name} con Id '{entity.Id.Value}' porque no existe en la base de datos.");
         }
 
         _context.Set<T>().Update(entity);

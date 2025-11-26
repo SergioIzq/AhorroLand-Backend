@@ -1,6 +1,7 @@
 ﻿using AhorroLand.Shared.Application.Abstractions.Servicies;
 using AhorroLand.Shared.Domain.Abstractions;
 using AhorroLand.Shared.Domain.Abstractions.Results;
+using AhorroLand.Shared.Domain.Interfaces;
 using AhorroLand.Shared.Domain.Interfaces.Repositories;
 using MediatR;
 
@@ -10,18 +11,19 @@ namespace AhorroLand.Shared.Application.Abstractions.Messaging.Abstracts.Queries
 /// Handler base para consultas GetById.
 /// ✅ OPTIMIZADO: Usa IReadRepositoryWithDto para obtener DTOs directamente desde SQL.
 /// </summary>
-public abstract class GetByIdQueryHandler<TEntity, TDto, TQuery>
- : AbsQueryHandler<TEntity>, IRequestHandler<TQuery, Result<TDto>>
-    where TEntity : AbsEntity
+public abstract class GetByIdQueryHandler<TEntity, TId, TDto, TQuery>
+ : AbsQueryHandler<TEntity, TId>, IRequestHandler<TQuery, Result<TDto>>
+    where TEntity : AbsEntity<TId>
     where TDto : class
-  where TQuery : AbsGetByIdQuery<TEntity, TDto>
+    where TQuery : AbsGetByIdQuery<TEntity, TId, TDto>
+    where TId : IGuidValueObject
 {
     // 🔥 ÚNICO REPOSITORIO: Solo usamos IReadRepositoryWithDto
-    protected readonly IReadRepositoryWithDto<TEntity, TDto> _dtoRepository;
+    protected readonly IReadRepositoryWithDto<TEntity, TDto, TId> _dtoRepository;
 
     // 🔥 Constructor simplificado
     public GetByIdQueryHandler(
-     IReadRepositoryWithDto<TEntity, TDto> dtoRepository,
+     IReadRepositoryWithDto<TEntity, TDto, TId> dtoRepository,
         ICacheService cacheService)
    : base(cacheService)
     {

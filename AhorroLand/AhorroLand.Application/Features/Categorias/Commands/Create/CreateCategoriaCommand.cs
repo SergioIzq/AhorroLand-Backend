@@ -1,6 +1,7 @@
 ﻿using AhorroLand.Domain;
 using AhorroLand.Shared.Application.Abstractions.Messaging.Abstracts.Commands;
 using AhorroLand.Shared.Application.Dtos;
+using AhorroLand.Shared.Domain.ValueObjects.Ids;
 
 namespace AhorroLand.Application.Features.Categorias.Commands;
 
@@ -8,7 +9,7 @@ namespace AhorroLand.Application.Features.Categorias.Commands;
 /// Representa la solicitud para crear una nueva Categoría.
 /// </summary>
 // Hereda de AbsCreateCommand<Entidad, DTO de Respuesta>
-public sealed record CreateCategoriaCommand : AbsCreateCommand<Categoria, CategoriaDto>
+public sealed record CreateCategoriaCommand : AbsCreateCommand<Categoria, CategoriaId>
 {
     /// <summary>
     /// Nombre de la nueva categoría.

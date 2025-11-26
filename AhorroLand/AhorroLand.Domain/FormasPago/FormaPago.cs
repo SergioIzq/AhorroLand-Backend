@@ -1,16 +1,19 @@
 ﻿using AhorroLand.Shared.Domain.Abstractions;
 using AhorroLand.Shared.Domain.ValueObjects;
+using AhorroLand.Shared.Domain.ValueObjects.Ids;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace AhorroLand.Domain;
 
-public sealed class FormaPago : AbsEntity
+[Table("formas_pago")]
+public sealed class FormaPago : AbsEntity<FormaPagoId>
 {
     // Constructor privado sin parámetros para EF Core
-    private FormaPago() : base(Guid.Empty)
+    private FormaPago() : base(new FormaPagoId(Guid.Empty))
     {
     }
 
-    private FormaPago(Guid id, Nombre nombre, UsuarioId usuarioId) : base(id)
+    private FormaPago(FormaPagoId id, Nombre nombre, UsuarioId usuarioId) : base(id)
     {
         Nombre = nombre;
         UsuarioId = usuarioId;
@@ -21,7 +24,7 @@ public sealed class FormaPago : AbsEntity
 
     public static FormaPago Create(Nombre nombre, UsuarioId usuarioId)
     {
-        var formaPago = new FormaPago(Guid.NewGuid(), nombre, usuarioId);
+        var formaPago = new FormaPago(new FormaPagoId(Guid.NewGuid()), nombre, usuarioId);
 
         return formaPago;
     }

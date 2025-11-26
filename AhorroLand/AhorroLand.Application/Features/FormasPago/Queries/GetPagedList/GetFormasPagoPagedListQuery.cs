@@ -1,6 +1,7 @@
 ﻿using AhorroLand.Domain;
 using AhorroLand.Shared.Application.Abstractions.Messaging.Abstracts.Queries;
 using AhorroLand.Shared.Application.Dtos;
+using AhorroLand.Shared.Domain.ValueObjects.Ids;
 
 namespace AhorroLand.Application.Features.FormasPago.Queries;
 
@@ -14,4 +15,4 @@ public sealed record GetFormasPagoPagedListQuery(
     string? SearchTerm = null,
     string? SortColumn = null,
     string? SortOrder = null
-) : AbsGetPagedListQuery<FormaPago, FormaPagoDto>(Page, PageSize);
+) : AbsGetPagedListQuery<FormaPago, FormaPagoId, FormaPagoDto>(Page, PageSize);

@@ -12,9 +12,9 @@ public readonly record struct Cantidad
             throw new ArgumentOutOfRangeException(nameof(valor), "La cantidad no puede ser negativo.");
         }
 
-        if (decimal.GetBits(valor)[3] > 2)
+        if (valor != Math.Round(valor, 2))
         {
-            throw new InvalidOperationException("La cantidad debe tener dos decimales.");
+            throw new InvalidOperationException($"La cantidad tiene más de dos decimales significativos. Valor recibido: {valor}");
         }
 
         Valor = valor;

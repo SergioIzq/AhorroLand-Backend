@@ -1,18 +1,20 @@
 ﻿using AhorroLand.Shared.Domain.Abstractions;
 using AhorroLand.Shared.Domain.ValueObjects;
+using AhorroLand.Shared.Domain.ValueObjects.Ids;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace AhorroLand.Domain;
 
-// Usuario es la Raíz del Agregado de Identidad
-public sealed class Usuario : AbsEntity
+[Table("usuarios")]
+public sealed class Usuario : AbsEntity<UsuarioId>
 {
 
-    private Usuario() : base(Guid.Empty)
+    private Usuario() : base(new UsuarioId(Guid.Empty))
     {
 
     }
     private Usuario(
-        Guid id,
+        UsuarioId id,
         Email correo,
         PasswordHash contrasenaHash,
         ConfirmationToken? tokenConfirmacion,
@@ -41,7 +43,7 @@ public sealed class Usuario : AbsEntity
 
         // 2. Crear la entidad
         var usuario = new Usuario(
-            Guid.NewGuid(),
+            new UsuarioId(Guid.NewGuid()),
             correo,
             contrasenaHash,
             tokenVO,

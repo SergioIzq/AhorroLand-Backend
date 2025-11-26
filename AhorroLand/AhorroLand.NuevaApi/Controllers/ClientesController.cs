@@ -136,7 +136,7 @@ public class ClientesController : AbsController
         return HandleResultForCreation(
             result,
             nameof(GetById), // Nombre de la acción para 'GetById'
-            new { id = result.Value.Id } // Parámetros de ruta
+            new { id = result.Value } // Parámetros de ruta
         );
     }
 

@@ -1,9 +1,10 @@
 ﻿using AhorroLand.Domain;
 using AhorroLand.Infrastructure.Persistence.Command;
+using AhorroLand.Shared.Domain.ValueObjects.Ids;
 
 namespace AhorroLand.Infrastructure.Persistence.Data.Personas
 {
-    public class PersonaWriteRepository : AbsWriteRepository<Persona>, IPersonaWriteRepository
+    public class PersonaWriteRepository : AbsWriteRepository<Persona, PersonaId>, IPersonaWriteRepository
     {
         private readonly IPersonaReadRepository _readRepository;
 
@@ -43,7 +44,7 @@ namespace AhorroLand.Infrastructure.Persistence.Data.Personas
             var exists = await _readRepository.ExistsWithSameNameExceptAsync(
                 entity.Nombre,
                 entity.UsuarioId,
-                entity.Id,
+                entity.Id.Value,
                 cancellationToken);
 
             if (exists)

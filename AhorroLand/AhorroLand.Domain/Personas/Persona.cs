@@ -1,16 +1,19 @@
 ﻿using AhorroLand.Shared.Domain.Abstractions;
 using AhorroLand.Shared.Domain.ValueObjects;
+using AhorroLand.Shared.Domain.ValueObjects.Ids;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace AhorroLand.Domain;
 
-public sealed class Persona : AbsEntity
+[Table("personas")]
+public sealed class Persona : AbsEntity<PersonaId>
 {
     // Constructor privado sin parámetros para EF Core
-    private Persona() : base(Guid.Empty)
+    private Persona() : base(new PersonaId(Guid.Empty))
     {
     }
 
-    private Persona(Guid id, Nombre nombre, UsuarioId usuarioId) : base(id)
+    private Persona(PersonaId id, Nombre nombre, UsuarioId usuarioId) : base(id)
     {
         Nombre = nombre;
         UsuarioId = usuarioId;
@@ -21,7 +24,7 @@ public sealed class Persona : AbsEntity
 
     public static Persona Create(Guid id, Nombre nombre, UsuarioId usuarioId)
     {
-        var persona = new Persona(id, nombre, usuarioId);
+        var persona = new Persona(new PersonaId(id), nombre, usuarioId);
 
         return persona;
     }

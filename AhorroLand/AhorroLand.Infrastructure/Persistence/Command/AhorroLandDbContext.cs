@@ -3,6 +3,7 @@ using AhorroLand.Shared.Domain.Abstractions;
 using AhorroLand.Domain;
 using Microsoft.EntityFrameworkCore;
 using System.Reflection;
+using AhorroLand.Shared.Domain.Interfaces;
 
 namespace AhorroLand.Infrastructure.Persistence.Command;
 
@@ -41,7 +42,7 @@ public class AhorroLandDbContext : DbContext
         }
 
         var entityTypes = domainAssembly.GetTypes()
-      .Where(t => t.IsClass && !t.IsAbstract && t.IsSubclassOf(typeof(AbsEntity)))
+      .Where(t => t.IsClass && !t.IsAbstract && t.IsSubclassOf(typeof(AbsEntity<IGuidValueObject>)))
      .ToArray();
 
 // 2. Registrar cada entidad encontrada

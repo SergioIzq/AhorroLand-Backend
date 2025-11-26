@@ -1,4 +1,4 @@
-using AhorroLand.Domain;
+锘縰sing AhorroLand.Domain;
 using AhorroLand.Domain.Traspasos.Eventos;
 using AhorroLand.Shared.Application.Abstractions.Messaging.Abstracts.Commands;
 using AhorroLand.Shared.Application.Abstractions.Servicies;
@@ -8,16 +8,17 @@ using AhorroLand.Shared.Domain.Interfaces;
 using AhorroLand.Shared.Domain.Interfaces.Repositories;
 using AhorroLand.Shared.Domain.ValueObjects;
 using Mapster;
+using AhorroLand.Shared.Domain.ValueObjects.Ids;
 
 namespace AhorroLand.Application.Features.Traspasos.Commands;
 
-public sealed class CreateTraspasoCommandHandler : AbsCreateCommandHandler<Traspaso, TraspasoDto, CreateTraspasoCommand>
+public sealed class CreateTraspasoCommandHandler : AbsCreateCommandHandler<Traspaso, TraspasoId, CreateTraspasoCommand>
 {
     private readonly IDomainValidator _validator;
 
     public CreateTraspasoCommandHandler(
     IUnitOfWork unitOfWork,
-    IWriteRepository<Traspaso> writeRepository,
+    IWriteRepository<Traspaso, TraspasoId> writeRepository,
     ICacheService cacheService,
     IDomainValidator validator)
     : base(unitOfWork, writeRepository, cacheService)
@@ -25,36 +26,36 @@ public sealed class CreateTraspasoCommandHandler : AbsCreateCommandHandler<Trasp
         _validator = validator;
     }
 
-    public override async Task<Result<TraspasoDto>> Handle(
+    public override async Task<Result<Guid>> Handle(
         CreateTraspasoCommand command, CancellationToken cancellationToken)
     {
-        // 1. VALIDACI覰 EN PARALELO de existencia (SELECT 1)
+        // 1. VALIDACI脫N EN PARALELO de existencia (SELECT 1)
         var validationTasks = new[]
         {
-            _validator.ExistsAsync<Cuenta>(command.CuentaOrigenId),
-            _validator.ExistsAsync<Cuenta>(command.CuentaDestinoId),
+            _validator.ExistsAsync<Cuenta,CuentaId>(new CuentaId(command.CuentaOrigenId)),
+            _validator.ExistsAsync<Cuenta, CuentaId>(new CuentaId(command.CuentaDestinoId)),
         };
 
-        // Espera de forma as韓crona y eficiente
+        // Espera de forma as铆ncrona y eficiente
         var results = await Task.WhenAll(validationTasks);
-        // ? OPTIMIZACI覰: results ahora es un array de bool (bool[]), eliminando GetAwaiter().GetResult()
+        // ? OPTIMIZACI脫N: results ahora es un array de bool (bool[]), eliminando GetAwaiter().GetResult()
 
         // 2. CHEQUEO DE ERRORES DE EXISTENCIA
         // results[0] es la existencia de CuentaOrigen, results[1] es CuentaDestino
         if (!results[0] || !results[1])
         {
-            return Result.Failure<TraspasoDto>(
+            return Result.Failure<Guid>(
                 Error.NotFound("Cuenta origen o destino no encontrada."));
         }
 
-        // 3. VALIDACI覰 DE DOMINIO INTR蚇SECA
+        // 3. VALIDACI脫N DE DOMINIO INTR脥NSECA
         if (command.CuentaOrigenId == command.CuentaDestinoId)
         {
-            return Result.Failure<TraspasoDto>(
+            return Result.Failure<Guid>(
                 Error.Validation("La cuenta origen y destino no pueden ser la misma."));
         }
 
-        // 4. CREACI覰 DE VALUE OBJECTS y la ENTIDAD
+        // 4. CREACI脫N DE VALUE OBJECTS y la ENTIDAD
         try
         {
             // Creamos VOs de valor
@@ -67,7 +68,7 @@ public sealed class CreateTraspasoCommandHandler : AbsCreateCommandHandler<Trasp
             var cuentaOrigenId = new CuentaId(command.CuentaOrigenId);
             var cuentaDestinoId = new CuentaId(command.CuentaDestinoId);
 
-            // Creaci髇 de la Entidad (solo con VOs de identidad y valor)
+            // Creaci贸n de la Entidad (solo con VOs de identidad y valor)
             var traspaso = Traspaso.Create(cuentaOrigenId, cuentaDestinoId, importeVO, fechaVO, usuarioIdVO, descripcionVO);
 
             // 5. PERSISTENCIA
@@ -76,31 +77,26 @@ public sealed class CreateTraspasoCommandHandler : AbsCreateCommandHandler<Trasp
 
             if (entityResult.IsFailure)
             {
-                return Result.Failure<TraspasoDto>(entityResult.Error);
+                return Result.Failure<Guid>(entityResult.Error);
             }
 
-            // 6. MAPEO Y 蒟ITO
-            var dto = entityResult.Value.Adapt<TraspasoDto>();
-
-            traspaso.RaiseDomainEvent(new TraspasoRegistradoDomainEvent(traspaso.Id, cuentaOrigenId.Value, cuentaDestinoId.Value, importeVO));
-
-            return Result.Success(dto);
+            return Result.Success(entityResult.Value);
         }
         catch (ArgumentException ex)
         {
-            // Captura de errores de validaci髇 de Value Objects (ej: Importe <= 0)
-            return Result.Failure<TraspasoDto>(Error.Validation(ex.Message));
+            // Captura de errores de validaci贸n de Value Objects (ej: Importe <= 0)
+            return Result.Failure<Guid>(Error.Validation(ex.Message));
         }
         catch (Exception ex)
         {
-            return Result.Failure<TraspasoDto>(Error.Failure("Error.Unexpected", "Error Inesperado", ex.Message));
+            return Result.Failure<Guid>(Error.Failure("Error.Unexpected", "Error Inesperado", ex.Message));
         }
     }
 
-    // ? Asegurar que el m閠odo s韓crono no se usa
+    // ? Asegurar que el m茅todo s铆ncrono no se usa
     protected override Traspaso CreateEntity(CreateTraspasoCommand command)
     {
-        throw new NotImplementedException("CreateEntity no debe usarse. La l骻ica de creaci髇 as韓crona reside en el m閠odo Handle.");
+        throw new NotImplementedException("CreateEntity no debe usarse. La l贸gica de creaci贸n as铆ncrona reside en el m茅todo Handle.");
     }
 
 }

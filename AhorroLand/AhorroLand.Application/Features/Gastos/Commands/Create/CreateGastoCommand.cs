@@ -1,9 +1,10 @@
 ﻿using AhorroLand.Domain;
 using AhorroLand.Shared.Application.Abstractions.Messaging.Abstracts.Commands;
+using AhorroLand.Shared.Domain.ValueObjects.Ids;
 
 namespace AhorroLand.Application.Features.Gastos.Commands;
 
-public sealed record CreateGastoCommand : AbsCreateCommand<Gasto, Guid>
+public sealed record CreateGastoCommand : AbsCreateCommand<Gasto, GastoId>
 {
     public required decimal Importe { get; init; }
     public required DateTime Fecha { get; init; }

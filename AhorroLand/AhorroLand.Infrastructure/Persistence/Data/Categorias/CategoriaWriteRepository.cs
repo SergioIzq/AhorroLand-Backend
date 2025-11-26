@@ -1,9 +1,10 @@
 ﻿using AhorroLand.Domain;
 using AhorroLand.Infrastructure.Persistence.Command;
+using AhorroLand.Shared.Domain.ValueObjects.Ids;
 
 namespace AhorroLand.Infrastructure.Persistence.Data.Categorias
 {
-    public class CategoriaWriteRepository : AbsWriteRepository<Categoria>, ICategoriaWriteRepository
+    public class CategoriaWriteRepository : AbsWriteRepository<Categoria, CategoriaId>, ICategoriaWriteRepository
     {
         private readonly ICategoriaReadRepository _readRepository;
 
@@ -50,7 +51,7 @@ namespace AhorroLand.Infrastructure.Persistence.Data.Categorias
             var exists = await _readRepository.ExistsWithSameNameExceptAsync(
                 entity.Nombre,
                 entity.IdUsuario,
-                entity.Id,
+                entity.Id.Value,
                 cancellationToken);
 
             if (exists)

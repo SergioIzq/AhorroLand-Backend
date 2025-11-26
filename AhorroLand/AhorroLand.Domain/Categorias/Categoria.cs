@@ -1,17 +1,20 @@
 ﻿using AhorroLand.Shared.Domain.Abstractions;
 using AhorroLand.Shared.Domain.ValueObjects;
+using AhorroLand.Shared.Domain.ValueObjects.Ids;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace AhorroLand.Domain;
 
-public sealed class Categoria : AbsEntity
+[Table("categorias")]
+public sealed class Categoria : AbsEntity<CategoriaId>
 {
     // Constructor privado sin parámetros para EF Core
-    private Categoria() : base(Guid.Empty)
+    private Categoria() : base(new CategoriaId(Guid.Empty))
     {
         // EF Core usará este constructor y luego establecerá las propiedades
     }
 
-    private Categoria(Guid id, Nombre nombre, UsuarioId idUsuario, Descripcion? descripcion = null) : base(id)
+    private Categoria(CategoriaId id, Nombre nombre, UsuarioId idUsuario, Descripcion? descripcion = null) : base(id)
     {
         Nombre = nombre;
         IdUsuario = idUsuario;
@@ -25,7 +28,7 @@ public sealed class Categoria : AbsEntity
 
     public static Categoria Create(Nombre nombre, UsuarioId usuarioId, Descripcion? descripcion = null)
     {
-        var categoria = new Categoria(Guid.NewGuid(), nombre, usuarioId, descripcion); // Descripcion puede ser null
+        var categoria = new Categoria(new CategoriaId(Guid.NewGuid()), nombre, usuarioId, descripcion); // Descripcion puede ser null
 
         return categoria;
     }

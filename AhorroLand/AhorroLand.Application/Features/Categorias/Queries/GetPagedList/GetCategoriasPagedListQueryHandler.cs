@@ -3,6 +3,7 @@ using AhorroLand.Shared.Application.Abstractions.Messaging.Abstracts.Queries;
 using AhorroLand.Shared.Application.Abstractions.Servicies;
 using AhorroLand.Shared.Application.Dtos;
 using AhorroLand.Shared.Domain.Interfaces.Repositories;
+using AhorroLand.Shared.Domain.ValueObjects.Ids;
 
 namespace AhorroLand.Application.Features.Categorias.Queries;
 
@@ -11,10 +12,10 @@ namespace AhorroLand.Application.Features.Categorias.Queries;
 /// Implementa la lógica específica de filtrado y ordenación.
 /// </summary>
 public sealed class GetCategoriasPagedListQueryHandler
-    : GetPagedListQueryHandler<Categoria, CategoriaDto, GetCategoriasPagedListQuery>
+    : GetPagedListQueryHandler<Categoria, CategoriaId, CategoriaDto, GetCategoriasPagedListQuery>
 {
     public GetCategoriasPagedListQueryHandler(
-        IReadRepositoryWithDto<Categoria, CategoriaDto> repository,
+        IReadRepositoryWithDto<Categoria, CategoriaDto, CategoriaId> repository,
         ICacheService cacheService)
         : base(repository, cacheService)
     {

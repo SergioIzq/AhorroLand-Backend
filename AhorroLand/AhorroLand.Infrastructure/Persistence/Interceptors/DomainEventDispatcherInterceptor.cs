@@ -35,9 +35,9 @@ public sealed class DomainEventDispatcherInterceptor : SaveChangesInterceptor
 
     private async Task PublishDomainEventsAsync(DbContext context, CancellationToken cancellationToken)
     {
-        var entitiesWithEvents = new List<(AbsEntity entity, List<IDomainEvent> events)>();
+        var entitiesWithEvents = new List<(AbsEntity<IGuidValueObject> entity, List<IDomainEvent> events)>();
 
-        foreach (var entry in context.ChangeTracker.Entries<AbsEntity>())
+        foreach (var entry in context.ChangeTracker.Entries<AbsEntity<IGuidValueObject>>())
         {
             var entity = entry.Entity;
             if (entity.DomainEvents.Count > 0)

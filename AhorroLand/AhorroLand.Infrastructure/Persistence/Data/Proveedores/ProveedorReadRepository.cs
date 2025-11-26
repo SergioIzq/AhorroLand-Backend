@@ -2,11 +2,12 @@
 using AhorroLand.Infrastructure.Persistence.Query;
 using AhorroLand.Shared.Application.Dtos;
 using AhorroLand.Shared.Domain.ValueObjects;
+using AhorroLand.Shared.Domain.ValueObjects.Ids;
 using Dapper;
 
 namespace AhorroLand.Infrastructure.Persistence.Data.Proveedores
 {
-  public class ProveedorReadRepository : AbsReadRepository<Proveedor, ProveedorDto>, IProveedorReadRepository
+  public class ProveedorReadRepository : AbsReadRepository<Proveedor, ProveedorDto, ProveedorId>, IProveedorReadRepository
     {
    public ProveedorReadRepository(IDbConnectionFactory dbConnectionFactory)
    : base(dbConnectionFactory, "proveedores")

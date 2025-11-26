@@ -2,6 +2,7 @@
 using AhorroLand.Shared.Application.Abstractions.Servicies;
 using AhorroLand.Shared.Domain.Abstractions;
 using AhorroLand.Shared.Domain.Abstractions.Results;
+using AhorroLand.Shared.Domain.Interfaces;
 using AhorroLand.Shared.Domain.Results;
 
 namespace AhorroLand.Shared.Application.Abstractions.Messaging.Abstracts;
@@ -11,8 +12,9 @@ namespace AhorroLand.Shared.Application.Abstractions.Messaging.Abstracts;
 /// ✅ OPTIMIZADO: Usa DTOs directamente desde IReadRepositoryWithDto.
 /// 🔥 SIMPLIFICADO: Solo proporciona el cache service, los handlers concretos inyectan sus repositorios.
 /// </summary>
-public abstract class AbsQueryHandler<TEntity> : IQueryHandlerBase<TEntity>
-    where TEntity : AbsEntity
+public abstract class AbsQueryHandler<TEntity, TId> : IQueryHandlerBase<TEntity, TId>
+    where TEntity : AbsEntity<TId>
+    where TId : IGuidValueObject
 {
     protected readonly ICacheService _cacheService;
 

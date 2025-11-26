@@ -1,24 +1,25 @@
-using AhorroLand.Domain;
+Ôªøusing AhorroLand.Domain;
 using AhorroLand.Shared.Application.Abstractions.Messaging.Abstracts.Commands;
 using AhorroLand.Shared.Application.Abstractions.Servicies;
 using AhorroLand.Shared.Application.Dtos;
 using AhorroLand.Shared.Domain.Interfaces;
 using AhorroLand.Shared.Domain.Interfaces.Repositories;
 using AhorroLand.Shared.Domain.ValueObjects;
+using AhorroLand.Shared.Domain.ValueObjects.Ids;
 
 namespace AhorroLand.Application.Features.Clientes.Commands;
 
 /// <summary>
-/// Maneja la creaciÛn de una nueva entidad Categoria.
+/// Maneja la creaci√≥n de una nueva entidad Categoria.
 /// </summary>
 public sealed class UpdateClienteCommandHandler
-    : AbsUpdateCommandHandler<Cliente, ClienteDto, UpdateClienteCommand>
+    : AbsUpdateCommandHandler<Cliente, ClienteId, ClienteDto, UpdateClienteCommand>
 {
     public UpdateClienteCommandHandler(
         IUnitOfWork unitOfWork,
-        IWriteRepository<Cliente> writeRepository,
+        IWriteRepository<Cliente, ClienteId> writeRepository,
         ICacheService cacheService,
-        IReadRepositoryWithDto<Cliente, ClienteDto> readOnlyRepository
+        IReadRepositoryWithDto<Cliente, ClienteDto, ClienteId> readOnlyRepository
         )
         : base(unitOfWork, writeRepository, cacheService)
     {
@@ -27,7 +28,7 @@ public sealed class UpdateClienteCommandHandler
     protected override void ApplyChanges(Cliente entity, UpdateClienteCommand command)
     {
         // 1. Crear el Value Object 'Nombre' a partir del string del comando.
-        // Esto autom·ticamente ejecuta las reglas de validaciÛn del nombre.
+        // Esto autom√°ticamente ejecuta las reglas de validaci√≥n del nombre.
         var nuevoNombreVO = new Nombre(command.Nombre);
 
         entity.Update(

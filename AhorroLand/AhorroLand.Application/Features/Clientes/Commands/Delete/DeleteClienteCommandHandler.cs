@@ -1,21 +1,22 @@
-using AhorroLand.Domain;
+ï»¿using AhorroLand.Domain;
 using AhorroLand.Shared.Application.Abstractions.Messaging.Abstracts.Commands;
 using AhorroLand.Shared.Application.Abstractions.Servicies;
 using AhorroLand.Shared.Domain.Interfaces;
 using AhorroLand.Shared.Domain.Interfaces.Repositories;
+using AhorroLand.Shared.Domain.ValueObjects.Ids;
 
 namespace AhorroLand.Application.Features.Clientes.Commands;
 
 /// <summary>
 /// Manejador concreto para eliminar un Cliente.
-/// Hereda toda la lógica de la clase base genérica.
+/// Hereda toda la lÃ³gica de la clase base genÃ©rica.
 /// </summary>
 public sealed class DeleteClienteCommandHandler
-    : DeleteCommandHandler<Cliente, DeleteClienteCommand>
+    : DeleteCommandHandler<Cliente, ClienteId, DeleteClienteCommand>
 {
     public DeleteClienteCommandHandler(
         IUnitOfWork unitOfWork,
-        IWriteRepository<Cliente> writeRepository,
+        IWriteRepository<Cliente, ClienteId> writeRepository,
         ICacheService cacheService)
         : base(unitOfWork, writeRepository, cacheService)
     {

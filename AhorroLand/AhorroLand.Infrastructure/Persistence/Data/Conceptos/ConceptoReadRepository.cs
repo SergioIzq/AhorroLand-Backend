@@ -2,11 +2,12 @@
 using AhorroLand.Infrastructure.Persistence.Query;
 using AhorroLand.Shared.Application.Dtos;
 using AhorroLand.Shared.Domain.ValueObjects;
+using AhorroLand.Shared.Domain.ValueObjects.Ids;
 using Dapper;
 
 namespace AhorroLand.Infrastructure.Persistence.Data.Conceptos
 {
-    public class ConceptoReadRepository : AbsReadRepository<Concepto, ConceptoDto>, IConceptoReadRepository
+    public class ConceptoReadRepository : AbsReadRepository<Concepto, ConceptoDto, ConceptoId>, IConceptoReadRepository
     {
         public ConceptoReadRepository(IDbConnectionFactory dbConnectionFactory)
       : base(dbConnectionFactory, "conceptos")

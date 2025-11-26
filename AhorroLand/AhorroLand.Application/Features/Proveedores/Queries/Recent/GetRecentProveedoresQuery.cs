@@ -1,10 +1,11 @@
-using AhorroLand.Domain;
+﻿using AhorroLand.Domain;
 using AhorroLand.Shared.Application.Abstractions.Messaging.Abstracts.Queries;
 using AhorroLand.Shared.Application.Dtos;
+using AhorroLand.Shared.Domain.ValueObjects.Ids;
 
 namespace AhorroLand.Application.Features.Proveedores.Queries.Recent;
 
-public sealed record GetRecentProveedoresQuery : GetRecentQuery<Proveedor, ProveedorDto>
+public sealed record GetRecentProveedoresQuery : GetRecentQuery<Proveedor, ProveedorDto, ProveedorId>
 {
     public GetRecentProveedoresQuery(int limit = 5) : base(limit) { }
 }

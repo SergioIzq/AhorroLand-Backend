@@ -13,14 +13,16 @@ namespace AhorroLand.Shared.Application.Abstractions.Messaging.Abstracts.Command
     /// ✅ OPTIMIZADO: Crea un stub de la entidad con solo el ID para DELETE directo.
     /// No carga la entidad completa ni valida existencia (EF Core lanzará DbUpdateConcurrencyException si no existe).
     /// </summary>
-    public abstract class DeleteCommandHandler<TEntity, TCommand>
-        : AbsCommandHandler<TEntity>, IRequestHandler<TCommand, Result>
-      where TEntity : AbsEntity
-  where TCommand : AbsDeleteCommand<TEntity>
+    public abstract class DeleteCommandHandler<TEntity, TId, TCommand>
+        : AbsCommandHandler<TEntity, TId>, IRequestHandler<TCommand, Result>
+        where TEntity : AbsEntity<TId>
+        where TCommand : AbsDeleteCommand<TEntity, TId>
+        where TId : IGuidValueObject
+
     {
         public DeleteCommandHandler(
                 IUnitOfWork unitOfWork,
-                IWriteRepository<TEntity> writeRepository,
+                IWriteRepository<TEntity, TId> writeRepository,
             ICacheService cacheService)
            : base(unitOfWork, writeRepository, cacheService)
         {

@@ -1,6 +1,7 @@
-using AhorroLand.Domain;
+﻿using AhorroLand.Domain;
 using AhorroLand.Shared.Application.Abstractions.Messaging.Abstracts.Queries;
 using AhorroLand.Shared.Application.Dtos;
+using AhorroLand.Shared.Domain.ValueObjects.Ids;
 
 namespace AhorroLand.Application.Features.Ingresos.Queries;
 
@@ -10,4 +11,4 @@ public sealed record GetIngresosPagedListQuery(
     string? SearchTerm = null,
     string? SortColumn = null,
     string? SortOrder = null
-) : AbsGetPagedListQuery<Ingreso, IngresoDto>(Page, PageSize);
+) : AbsGetPagedListQuery<Ingreso, IngresoId, IngresoDto>(Page, PageSize);

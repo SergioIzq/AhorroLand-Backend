@@ -12,11 +12,12 @@ namespace AhorroLand.Shared.Application.Abstractions.Messaging.Abstracts;
 /// Utiliza IWriteRepository e IUnitOfWork para asegurar la segregación de responsabilidades.
 /// </summary>
 /// <typeparam name="TEntity">El tipo de entidad que el command handler manipula, debe heredar de AbsEntity.</typeparam>
-public abstract class AbsCommandHandler<TEntity> : IAbsCommandHandlerBase<TEntity>
-    where TEntity : AbsEntity
+public abstract class AbsCommandHandler<TEntity, TId> : IAbsCommandHandlerBase<TEntity, TId>
+    where TEntity : AbsEntity<TId>
+    where TId: IGuidValueObject
 {
     protected readonly IUnitOfWork _unitOfWork;
-    protected readonly IWriteRepository<TEntity> _writeRepository;
+    protected readonly IWriteRepository<TEntity, TId> _writeRepository;
     protected readonly ICacheService _cacheService;
 
     /// <summary>
@@ -26,7 +27,7 @@ public abstract class AbsCommandHandler<TEntity> : IAbsCommandHandlerBase<TEntit
     /// <param name="writeRepository">El repositorio con métodos de escritura (Add, Update, Delete).</param>
     public AbsCommandHandler(
         IUnitOfWork unitOfWork,
-        IWriteRepository<TEntity> writeRepository,
+        IWriteRepository<TEntity, TId> writeRepository,
         ICacheService cacheService
         )
     {
@@ -51,9 +52,9 @@ public abstract class AbsCommandHandler<TEntity> : IAbsCommandHandlerBase<TEntit
 
             await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-            await InvalidateIndividualCacheAsync(entity.Id);
+            await InvalidateIndividualCacheAsync(entity.Id.Value);
 
-            return Result.Success(entity.Id);
+            return Result.Success(entity.Id.Value);
         }
         catch (Exception ex)
         {
@@ -75,9 +76,9 @@ public abstract class AbsCommandHandler<TEntity> : IAbsCommandHandlerBase<TEntit
             _writeRepository.Update(entity);
             await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-            await InvalidateIndividualCacheAsync(entity.Id);
+            await InvalidateIndividualCacheAsync(entity.Id.Value);
 
-            return Result.Success(entity.Id);
+            return Result.Success(entity.Id.Value);
         }
         catch (Exception ex)
         {
@@ -99,7 +100,7 @@ public abstract class AbsCommandHandler<TEntity> : IAbsCommandHandlerBase<TEntit
             _writeRepository.Delete(entity);
             await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-            await InvalidateIndividualCacheAsync(entity.Id);
+            await InvalidateIndividualCacheAsync(entity.Id.Value);
 
             return Result.Success();
         }

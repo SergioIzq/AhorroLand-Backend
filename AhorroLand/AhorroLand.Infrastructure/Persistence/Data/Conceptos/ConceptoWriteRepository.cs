@@ -1,9 +1,10 @@
 ﻿using AhorroLand.Domain;
 using AhorroLand.Infrastructure.Persistence.Command;
+using AhorroLand.Shared.Domain.ValueObjects.Ids;
 
 namespace AhorroLand.Infrastructure.Persistence.Data.Conceptos
 {
-    public class ConceptoWriteRepository : AbsWriteRepository<Concepto>, IConceptoWriteRepository
+    public class ConceptoWriteRepository : AbsWriteRepository<Concepto, ConceptoId>, IConceptoWriteRepository
     {
         private readonly IConceptoReadRepository _readRepository;
 
@@ -41,15 +42,14 @@ namespace AhorroLand.Infrastructure.Persistence.Data.Conceptos
             await base.UpdateAsync(entity, cancellationToken);
 
             var exists = await _readRepository.ExistsWithSameNameExceptAsync(
- entity.Nombre,
- entity.UsuarioId,
- entity.Id,
- cancellationToken);
+                         entity.Nombre,
+                         entity.UsuarioId,
+                         entity.Id.Value,
+                         cancellationToken);
 
             if (exists)
             {
-                throw new InvalidOperationException(
-  $"Ya existe otro concepto con el nombre '{entity.Nombre.Value}' para este usuario.");
+                throw new InvalidOperationException($"Ya existe otro concepto con el nombre '{entity.Nombre.Value}' para este usuario.");
             }
         }
     }

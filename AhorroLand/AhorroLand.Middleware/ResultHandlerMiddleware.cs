@@ -5,20 +5,23 @@ using System.Text.Json;
 
 namespace AhorroLand.Middleware;
 
-/// <summary>
-/// Middleware optimizado para interceptar objetos Result con errores y convertirlos en respuestas HTTP apropiadas.
-/// </summary>
 public sealed class ResultHandlerMiddleware
 {
     private readonly RequestDelegate _next;
     private readonly ILogger<ResultHandlerMiddleware> _logger;
 
-    // ✅ OPTIMIZACIÓN: JsonSerializerOptions reutilizable
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
         DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull,
         WriteIndented = false
+    };
+
+    // Opciones para lectura: Permite comentarios y comas al final para ser más tolerante
+    private static readonly JsonDocumentOptions DocumentOptions = new()
+    {
+        AllowTrailingCommas = true,
+        CommentHandling = JsonCommentHandling.Skip
     };
 
     public ResultHandlerMiddleware(RequestDelegate next, ILogger<ResultHandlerMiddleware> logger)
@@ -31,7 +34,6 @@ public sealed class ResultHandlerMiddleware
     {
         var originalBodyStream = context.Response.Body;
 
-        // ✅ OPTIMIZACIÓN: Usar MemoryStream del pool si es posible
         using var responseBody = new MemoryStream();
         context.Response.Body = responseBody;
 
@@ -39,32 +41,42 @@ public sealed class ResultHandlerMiddleware
         {
             await _next(context);
 
-            // Solo procesar si la respuesta es exitosa pero podría contener un Result con error
+            // 1. Validaciones previas para no procesar innecesariamente
             if (context.Response.StatusCode == StatusCodes.Status200OK &&
-                context.Response.ContentType?.Contains("application/json") == true)
+                HasJsonContentType(context) &&
+                !IsCompressed(context)) // IMPORTANTE: No leer si está comprimido
             {
                 responseBody.Seek(0, SeekOrigin.Begin);
 
-                // ✅ OPTIMIZACIÓN: Leer y parsear en una sola operación
-                var bodyContent = await new StreamReader(responseBody).ReadToEndAsync();
-
-                // Intentar detectar si es un Result con error
-                if (TryDetectResultError(bodyContent, out var errorResponse, out var statusCode))
+                // 2. OPTIMIZACIÓN: Obtener los bytes directamente sin convertir a String
+                // Esto evita el error del BOM (0xEF) y ahorra memoria.
+                if (responseBody.TryGetBuffer(out ArraySegment<byte> buffer) && buffer.Count > 0)
                 {
-                    _logger.LogInformation(
-           "Result con error detectado: {ErrorCode} - Status: {StatusCode} - Path: {Path}",
-                         errorResponse.Code, statusCode, context.Request.Path);
+                    if (TryDetectResultError(buffer, out var errorResponse, out var statusCode))
+                    {
+                        _logger.LogInformation(
+                            "Result con error detectado: {ErrorCode} - Status: {StatusCode} - Path: {Path}",
+                            errorResponse.Code, statusCode, context.Request.Path);
 
-                    // Reemplazar la respuesta con el error mapeado
-                    await WriteErrorResponseAsync(context, originalBodyStream, errorResponse, statusCode);
-                    return;
+                        await WriteErrorResponseAsync(context, originalBodyStream, errorResponse, statusCode);
+                        return;
+                    }
                 }
             }
 
-            // Si no hay error, copiar la respuesta original
+            // Si no hay error o no es procesable, devolver la respuesta original
             responseBody.Seek(0, SeekOrigin.Begin);
-            context.Response.Body = originalBodyStream;
             await responseBody.CopyToAsync(originalBodyStream);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error crítico en ResultHandlerMiddleware. Path: {Path}", context.Request.Path);
+
+            // Recuperación ante fallos: Devolver lo que haya en el buffer original
+            responseBody.Seek(0, SeekOrigin.Begin);
+            await responseBody.CopyToAsync(originalBodyStream);
+
+            throw;
         }
         finally
         {
@@ -72,137 +84,115 @@ public sealed class ResultHandlerMiddleware
         }
     }
 
+    private static bool HasJsonContentType(HttpContext context)
+    {
+        var contentType = context.Response.ContentType;
+        return !string.IsNullOrEmpty(contentType) && contentType.Contains("application/json");
+    }
+
+    private static bool IsCompressed(HttpContext context)
+    {
+        // Si hay Content-Encoding (gzip, br, etc.), el body es binario, no texto.
+        return context.Response.Headers.ContainsKey("Content-Encoding");
+    }
+
     /// <summary>
-    /// Detecta si el contenido JSON contiene un Result con error
-    /// ✅ OPTIMIZACIÓN: Parsing eficiente con ReadOnlySpan
+    /// Detecta error parseando directamente los BYTES (ReadOnlyMemory)
     /// </summary>
-    private bool TryDetectResultError(string jsonContent, out ErrorResponse? errorResponse, out int statusCode)
+    private bool TryDetectResultError(ReadOnlyMemory<byte> jsonBytes, out ErrorResponse? errorResponse, out int statusCode)
     {
         errorResponse = null;
         statusCode = StatusCodes.Status500InternalServerError;
 
         try
         {
-            // ✅ OPTIMIZACIÓN: Deserialización con opciones optimizadas
-            using var doc = JsonDocument.Parse(jsonContent, new JsonDocumentOptions
-            {
-                AllowTrailingCommas = true,
-                CommentHandling = JsonCommentHandling.Skip
-            });
-
+            // JsonDocument.Parse maneja automáticamente el BOM UTF-8 (0xEF, 0xBB, 0xBF)
+            // cuando trabaja con bytes.
+            using var doc = JsonDocument.Parse(jsonBytes, DocumentOptions);
             var root = doc.RootElement;
 
-            // Verificar si tiene las propiedades de Result
+            // Verificar si es un objeto JSON (si es array [], no es un Result)
+            if (root.ValueKind != JsonValueKind.Object) return false;
+
+            // Verificar propiedades (Case Insensitive implícito chequeando ambas)
             if (!root.TryGetProperty("isSuccess", out var isSuccessElement) &&
-       !root.TryGetProperty("IsSuccess", out isSuccessElement))
+                !root.TryGetProperty("IsSuccess", out isSuccessElement))
             {
                 return false;
             }
 
-            // Si es exitoso, no hay error
             if (isSuccessElement.GetBoolean())
             {
-                return false;
+                return false; // Es Success = true, no hacemos nada
             }
 
             // Extraer el error
             if (!root.TryGetProperty("error", out var errorElement) &&
-             !root.TryGetProperty("Error", out errorElement))
+                !root.TryGetProperty("Error", out errorElement))
             {
                 return false;
             }
 
-            // Parsear el objeto Error
-            var code = errorElement.TryGetProperty("code", out var codeElement) ||
-        errorElement.TryGetProperty("Code", out codeElement)
-             ? codeElement.GetString() ?? "Error.Unknown"
-               : "Error.Unknown";
+            // Parsear propiedades del error con seguridad null
+            var code = GetStringProperty(errorElement, "code") ?? "Error.Unknown";
+            var name = GetStringProperty(errorElement, "name") ?? "Error";
+            var message = GetStringProperty(errorElement, "message") ?? "Ocurrió un error";
 
-            var name = errorElement.TryGetProperty("name", out var nameElement) ||
-         errorElement.TryGetProperty("Name", out nameElement)
-          ? nameElement.GetString() ?? "Error"
-        : "Error";
-
-            var message = errorElement.TryGetProperty("message", out var messageElement) ||
-  errorElement.TryGetProperty("Message", out messageElement)
-     ? messageElement.GetString() ?? "Ocurrió un error"
-           : "Ocurrió un error";
-
-            // Mapear código de error a status HTTP
             statusCode = MapErrorCodeToHttpStatus(code);
-
             errorResponse = new ErrorResponse(code, name, message, Activity.Current?.Id);
+
             return true;
         }
-        catch (JsonException ex)
+        catch (JsonException)
         {
-            _logger.LogDebug(ex, "No se pudo parsear la respuesta como JSON. No es un Result.");
+            // Es común que falle si el body no es el JSON que esperamos. 
+            // No logueamos error aquí para no ensuciar logs, simplemente retornamos false.
+            return false;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Error inesperado leyendo estructura Result.");
             return false;
         }
     }
 
-    /// <summary>
-    /// Mapea códigos de error del dominio a códigos HTTP
-    /// ✅ OPTIMIZACIÓN: Switch expression con pattern matching
-    /// </summary>
+    private static string? GetStringProperty(JsonElement element, string propertyName)
+    {
+        // Busca CamelCase o PascalCase
+        if (element.TryGetProperty(propertyName, out var prop) ||
+            element.TryGetProperty(char.ToUpper(propertyName[0]) + propertyName[1..], out prop))
+        {
+            return prop.GetString();
+        }
+        return null;
+    }
+
     private static int MapErrorCodeToHttpStatus(string errorCode)
     {
         return errorCode switch
         {
-            // 400 - Bad Request
-            var code when code.Contains("Validation", StringComparison.OrdinalIgnoreCase) =>
-                StatusCodes.Status400BadRequest,
-
-            // 404 - Not Found
-            var code when code.Contains("NotFound", StringComparison.OrdinalIgnoreCase) =>
-            StatusCodes.Status404NotFound,
-
-            // 409 - Conflict
-            var code when code.Contains("Conflict", StringComparison.OrdinalIgnoreCase) =>
-            StatusCodes.Status409Conflict,
-
-            var code when code.Contains("AlreadyExists", StringComparison.OrdinalIgnoreCase) =>
-                 StatusCodes.Status409Conflict,
-
-            // 401 - Unauthorized
-            var code when code.Contains("Unauthorized", StringComparison.OrdinalIgnoreCase) =>
-        StatusCodes.Status401Unauthorized,
-
-            var code when code.Contains("Authentication", StringComparison.OrdinalIgnoreCase) =>
-           StatusCodes.Status401Unauthorized,
-
-            // 403 - Forbidden
-            var code when code.Contains("Forbidden", StringComparison.OrdinalIgnoreCase) =>
-           StatusCodes.Status403Forbidden,
-
-            var code when code.Contains("Authorization", StringComparison.OrdinalIgnoreCase) =>
-           StatusCodes.Status403Forbidden,
-
-            // 422 - Unprocessable Entity
-            var code when code.Contains("UpdateFailure", StringComparison.OrdinalIgnoreCase) =>
-     StatusCodes.Status422UnprocessableEntity,
-
-            var code when code.Contains("DeleteFailure", StringComparison.OrdinalIgnoreCase) =>
-                   StatusCodes.Status422UnprocessableEntity,
-
-            // 500 - Internal Server Error (default)
+            var c when c.Contains("Validation", StringComparison.OrdinalIgnoreCase) => StatusCodes.Status400BadRequest,
+            var c when c.Contains("NotFound", StringComparison.OrdinalIgnoreCase) => StatusCodes.Status404NotFound,
+            var c when c.Contains("Conflict", StringComparison.OrdinalIgnoreCase) => StatusCodes.Status409Conflict,
+            var c when c.Contains("AlreadyExists", StringComparison.OrdinalIgnoreCase) => StatusCodes.Status409Conflict,
+            var c when c.Contains("Unauthorized", StringComparison.OrdinalIgnoreCase) => StatusCodes.Status401Unauthorized,
+            var c when c.Contains("Authentication", StringComparison.OrdinalIgnoreCase) => StatusCodes.Status401Unauthorized,
+            var c when c.Contains("Forbidden", StringComparison.OrdinalIgnoreCase) => StatusCodes.Status403Forbidden,
+            var c when c.Contains("Authorization", StringComparison.OrdinalIgnoreCase) => StatusCodes.Status403Forbidden,
+            var c when c.Contains("UpdateFailure", StringComparison.OrdinalIgnoreCase) => StatusCodes.Status422UnprocessableEntity,
+            var c when c.Contains("DeleteFailure", StringComparison.OrdinalIgnoreCase) => StatusCodes.Status422UnprocessableEntity,
             _ => StatusCodes.Status500InternalServerError
         };
     }
 
-    /// <summary>
-    /// Escribe la respuesta de error al stream de salida
-    /// ✅ OPTIMIZACIÓN: Serialización directa al stream
-    /// </summary>
-    private static async Task WriteErrorResponseAsync(
-        HttpContext context,
-     Stream outputStream,
-        ErrorResponse errorResponse,
-        int statusCode)
+    private static async Task WriteErrorResponseAsync(HttpContext context, Stream outputStream, ErrorResponse errorResponse, int statusCode)
     {
-        context.Response.Clear();
+        // Importante: No podemos escribir cabeceras si ya empezaron a enviarse (aunque con MemoryStream intermedio es seguro)
         context.Response.StatusCode = statusCode;
         context.Response.ContentType = "application/json";
+
+        // Removemos content-length anterior si existía porque el tamaño cambia
+        context.Response.Headers.ContentLength = null;
 
         await JsonSerializer.SerializeAsync(outputStream, errorResponse, JsonOptions);
     }

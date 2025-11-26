@@ -1,6 +1,6 @@
 ﻿using AhorroLand.Shared.Domain.Interfaces;
 
-namespace AhorroLand.Shared.Domain.ValueObjects;
+namespace AhorroLand.Shared.Domain.ValueObjects.Ids;
 
 /// <summary>
 /// 🚀 OPTIMIZADO: Value Object para UsuarioId.
@@ -17,7 +17,7 @@ public readonly record struct UsuarioId : IGuidValueObject
         if (value == Guid.Empty)
             throw new ArgumentException("UsuarioId no puede ser Guid.Empty", nameof(value));
 
-        this.Value = value;
+        Value = value;
     }
 
     // 🚀 OPTIMIZACIÓN: Factory method estático para evitar boxing

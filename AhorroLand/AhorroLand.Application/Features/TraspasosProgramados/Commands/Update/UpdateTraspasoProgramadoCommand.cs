@@ -1,10 +1,11 @@
-using AhorroLand.Domain;
+﻿using AhorroLand.Domain;
 using AhorroLand.Shared.Application.Abstractions.Messaging.Abstracts.Commands;
 using AhorroLand.Shared.Application.Dtos;
+using AhorroLand.Shared.Domain.ValueObjects.Ids;
 
 namespace AhorroLand.Application.Features.TraspasosProgramados.Commands;
 
-public sealed record UpdateTraspasoProgramadoCommand : AbsUpdateCommand<TraspasoProgramado, TraspasoProgramadoDto>
+public sealed record UpdateTraspasoProgramadoCommand : AbsUpdateCommand<TraspasoProgramado, TraspasoProgramadoId, TraspasoProgramadoDto>
 {
     public required Guid CuentaOrigenId { get; init; }
     public required Guid CuentaDestinoId { get; init; }

@@ -1,4 +1,4 @@
-using AhorroLand.Domain;
+锘縰sing AhorroLand.Domain;
 using AhorroLand.Shared.Application.Abstractions.Messaging.Abstracts.Commands;
 using AhorroLand.Shared.Application.Abstractions.Servicies;
 using AhorroLand.Shared.Application.Dtos;
@@ -7,18 +7,19 @@ using AhorroLand.Shared.Domain.Interfaces;
 using AhorroLand.Shared.Domain.Interfaces.Repositories;
 using AhorroLand.Shared.Domain.ValueObjects;
 using Mapster;
+using AhorroLand.Shared.Domain.ValueObjects.Ids;
 
 namespace AhorroLand.Application.Features.TraspasosProgramados.Commands;
 
 public sealed class CreateTraspasoProgramadoCommandHandler
-    : AbsCreateCommandHandler<TraspasoProgramado, TraspasoProgramadoDto, CreateTraspasoProgramadoCommand>
+    : AbsCreateCommandHandler<TraspasoProgramado, TraspasoProgramadoId, CreateTraspasoProgramadoCommand>
 {
     private readonly IDomainValidator _validator;
     private readonly IJobSchedulingService _jobSchedulingService;
 
     public CreateTraspasoProgramadoCommandHandler(
         IUnitOfWork unitOfWork,
-        IWriteRepository<TraspasoProgramado> writeRepository,
+        IWriteRepository<TraspasoProgramado, TraspasoProgramadoId> writeRepository,
         ICacheService cacheService,
         IDomainValidator validator,
         IJobSchedulingService jobSchedulingService)
@@ -28,33 +29,33 @@ public sealed class CreateTraspasoProgramadoCommandHandler
         _jobSchedulingService = jobSchedulingService;
     }
 
-    public override async Task<Result<TraspasoProgramadoDto>> Handle(
+    public override async Task<Result<Guid>> Handle(
         CreateTraspasoProgramadoCommand command, CancellationToken cancellationToken)
     {
-        // 1. VALIDACI覰 AS蚇CRONA EN PARALELO (M醲ima Optimizaci髇 I/O)
+        // 1. VALIDACI脫N AS脥NCRONA EN PARALELO (M谩xima Optimizaci贸n I/O)
         var validationTasks = new[]
         {
             // Validaciones obligatorias
-            _validator.ExistsAsync<Cuenta>(command.CuentaOrigenId),
-            _validator.ExistsAsync<Cuenta>(command.CuentaDestinoId),
+            _validator.ExistsAsync < Cuenta, CuentaId >(new CuentaId(command.CuentaOrigenId)),
+            _validator.ExistsAsync < Cuenta, CuentaId >(new CuentaId(command.CuentaDestinoId)),
         };
 
         // Espera a que todas las consultas terminen al mismo tiempo.
         var results = await Task.WhenAll(validationTasks);
 
-        // 2. CHEQUEO R罰IDO DE ERRORES DE EXISTENCIA
+        // 2. CHEQUEO R脕PIDO DE ERRORES DE EXISTENCIA
         if (results.Any(r => !r))
         {
             // Retorno de error con el mensaje de Error.NotFound
-            return Result.Failure<TraspasoProgramadoDto>(
-                Error.NotFound("Una o m醩 entidades referenciadas (CuentaOrigen, CuentaDestino) no existen."));
+            return Result.Failure<Guid>(
+                Error.NotFound("Una o m谩s entidades referenciadas (CuentaOrigen, CuentaDestino) no existen."));
         }
 
-        // 3. CREACI覰 DE VALUE OBJECTS (VOs) DENTRO DE UN TRY-CATCH
+        // 3. CREACI脫N DE VALUE OBJECTS (VOs) DENTRO DE UN TRY-CATCH
         // Volvemos al try-catch para manejar las ArgumentException lanzadas por los VOs.
         try
         {
-            // Creaci髇 de VOs, que ahora son los que lanzan ArgumentException
+            // Creaci贸n de VOs, que ahora son los que lanzan ArgumentException
             var importe = new Cantidad(command.Importe);
             var frecuencia = new Frecuencia(command.Frecuencia);
             var descripcion = new Descripcion(command.Descripcion ?? string.Empty);
@@ -67,7 +68,7 @@ public sealed class CreateTraspasoProgramadoCommandHandler
             // Uso del servicio de infraestructura para generar el JobId
             var hangfireJobId = _jobSchedulingService.GenerateJobId();
 
-            // 4. CREACI覰 DE LA ENTIDAD DE DOMINIO (TraspasoProgramado)
+            // 4. CREACI脫N DE LA ENTIDAD DE DOMINIO (TraspasoProgramado)
             var traspasoProgramadoResult = TraspasoProgramado.Create(
                 cuentaOrigenId,
                 cuentaDestinoId,
@@ -81,7 +82,7 @@ public sealed class CreateTraspasoProgramadoCommandHandler
 
             if (traspasoProgramadoResult.IsFailure)
             {
-                return Result.Failure<TraspasoProgramadoDto>(traspasoProgramadoResult.Error);
+                return Result.Failure<Guid>(traspasoProgramadoResult.Error);
             }
 
             // 5. PERSISTENCIA
@@ -90,27 +91,24 @@ public sealed class CreateTraspasoProgramadoCommandHandler
 
             if (entityResult.IsFailure)
             {
-                return Result.Failure<TraspasoProgramadoDto>(entityResult.Error);
+                return Result.Failure<Guid>(entityResult.Error);
             }
 
-            // 6. MAPEO Y 蒟ITO
-            var dto = traspasoProgramadoResult.Value.Adapt<TraspasoProgramadoDto>();
-
-            return Result.Success(dto);
+            return Result.Success(entityResult.Value);
         }
         catch (ArgumentException ex)
         {
-            return Result.Failure<TraspasoProgramadoDto>(Error.Validation(ex.Message));
+            return Result.Failure<Guid>(Error.Validation(ex.Message));
         }
         catch (Exception ex)
         {
-            return Result.Failure<TraspasoProgramadoDto>(Error.Failure("Error.Unexpected", "Error Inesperado", ex.Message));
+            return Result.Failure<Guid>(Error.Failure("Error.Unexpected", "Error Inesperado", ex.Message));
         }
     }
 
     protected override TraspasoProgramado CreateEntity(CreateTraspasoProgramadoCommand command)
     {
-        throw new NotImplementedException("CreateEntity no debe usarse. La l骻ica de creaci髇 as韓crona reside en el m閠odo Handle.");
+        throw new NotImplementedException("CreateEntity no debe usarse. La l贸gica de creaci贸n as铆ncrona reside en el m茅todo Handle.");
     }
 }
 

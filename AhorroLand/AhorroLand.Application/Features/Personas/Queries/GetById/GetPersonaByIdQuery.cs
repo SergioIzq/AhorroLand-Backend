@@ -1,6 +1,7 @@
 ﻿using AhorroLand.Domain;
 using AhorroLand.Shared.Application.Abstractions.Messaging.Abstracts.Queries;
 using AhorroLand.Shared.Application.Dtos;
+using AhorroLand.Shared.Domain.ValueObjects.Ids;
 
 namespace AhorroLand.Application.Features.Personas.Queries;
 
@@ -8,6 +9,6 @@ namespace AhorroLand.Application.Features.Personas.Queries;
 /// Representa la solicitud para crear un nuevo Persona.
 /// </summary>
 // Hereda de AbsCreateCommand<Entidad, DTO de Respuesta>
-public sealed record GetPersonaByIdQuery(Guid Id) : AbsGetByIdQuery<Persona, PersonaDto>(Id)
+public sealed record GetPersonaByIdQuery(Guid Id) : AbsGetByIdQuery<Persona, PersonaId, PersonaDto>(Id)
 {
 }

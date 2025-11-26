@@ -1,5 +1,6 @@
 ﻿using AhorroLand.Domain;
 using AhorroLand.Shared.Domain.ValueObjects;
+using AhorroLand.Shared.Domain.ValueObjects.Ids;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
@@ -11,8 +12,10 @@ namespace AhorroLand.Infrastructure.Persistence.Command.Configurations.Configura
         public void Configure(EntityTypeBuilder<Cliente> builder)
         {
             builder.ToTable("clientes"); // ✅ Nombre correcto de tabla (plural)
-            builder.HasKey(e => e.Id);
-            builder.Property(e => e.Id).HasColumnName("id").ValueGeneratedOnAdd();
+            builder.Property(e => e.Id)
+                           .HasColumnName("id")
+                           .IsRequired()
+                           .ValueGeneratedOnAdd();
 
             // 🔧 FIX CRÍTICO: Configurar conversiones de Value Objects
             builder.Property(e => e.Nombre)

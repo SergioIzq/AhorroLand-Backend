@@ -1,10 +1,11 @@
-using AhorroLand.Domain;
+﻿using AhorroLand.Domain;
 using AhorroLand.Shared.Application.Abstractions.Messaging.Abstracts.Commands;
 using AhorroLand.Shared.Application.Dtos;
+using AhorroLand.Shared.Domain.ValueObjects.Ids;
 
 namespace AhorroLand.Application.Features.GastosProgramados.Commands;
 
-public sealed record CreateGastoProgramadoCommand : AbsCreateCommand<GastoProgramado, GastoProgramadoDto>
+public sealed record CreateGastoProgramadoCommand : AbsCreateCommand<GastoProgramado, GastoProgramadoId>
 {
     public required decimal Importe { get; init; }
     public required string Frecuencia { get; init; }

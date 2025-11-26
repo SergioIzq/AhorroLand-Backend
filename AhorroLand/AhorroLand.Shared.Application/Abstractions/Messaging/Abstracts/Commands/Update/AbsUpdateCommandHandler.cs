@@ -12,14 +12,16 @@ namespace AhorroLand.Shared.Application.Abstractions.Messaging.Abstracts.Command
 /// Handler base para comandos de actualización.
 /// ✅ OPTIMIZADO: Usa el repositorio de escritura para obtener la entidad con tracking.
 /// </summary>
-public abstract class AbsUpdateCommandHandler<TEntity, TDto, TCommand>
-    : AbsCommandHandler<TEntity>, IRequestHandler<TCommand, Result<TDto>>
-    where TEntity : AbsEntity
-    where TCommand : AbsUpdateCommand<TEntity, TDto>
+public abstract class AbsUpdateCommandHandler<TEntity, TId, TDto, TCommand>
+    : AbsCommandHandler<TEntity, TId>, IRequestHandler<TCommand, Result<TDto>>
+    where TEntity : AbsEntity<TId>
+    where TCommand : AbsUpdateCommand<TEntity, TId, TDto>
+    where TId : IGuidValueObject
+    where TDto : class
 {
     public AbsUpdateCommandHandler(
         IUnitOfWork unitOfWork,
-        IWriteRepository<TEntity> writeRepository,
+        IWriteRepository<TEntity, TId> writeRepository,
         ICacheService cacheService)
         : base(unitOfWork, writeRepository, cacheService)
     {

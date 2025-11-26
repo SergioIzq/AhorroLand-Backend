@@ -1,6 +1,7 @@
 ﻿using AhorroLand.Domain;
 using AhorroLand.Shared.Application.Abstractions.Messaging.Abstracts.Commands;
 using AhorroLand.Shared.Application.Dtos;
+using AhorroLand.Shared.Domain.ValueObjects.Ids;
 
 namespace AhorroLand.Application.Features.Ingresos.Commands;
 
@@ -8,7 +9,7 @@ namespace AhorroLand.Application.Features.Ingresos.Commands;
 /// Representa la solicitud para actualizar una nueva Ingreso.
 /// </summary>
 // Hereda de AbsUpadteCommand<Entidad, DTO de Respuesta>
-public sealed record UpdateIngresoCommand : AbsUpdateCommand<Ingreso, IngresoDto>
+public sealed record UpdateIngresoCommand : AbsUpdateCommand<Ingreso, IngresoId, IngresoDto>
 {
     public required decimal Importe { get; init; }
     public required DateTime Fecha { get; init; }

@@ -2,11 +2,12 @@
 using AhorroLand.Infrastructure.Persistence.Query;
 using AhorroLand.Shared.Application.Dtos;
 using AhorroLand.Shared.Domain.ValueObjects;
+using AhorroLand.Shared.Domain.ValueObjects.Ids;
 using Dapper;
 
 namespace AhorroLand.Infrastructure.Persistence.Data.FormasPago
 {
-    public class FormaPagoReadRepository : AbsReadRepository<FormaPago, FormaPagoDto>, IFormaPagoReadRepository
+    public class FormaPagoReadRepository : AbsReadRepository<FormaPago, FormaPagoDto, FormaPagoId>, IFormaPagoReadRepository
   {
    public FormaPagoReadRepository(IDbConnectionFactory dbConnectionFactory)
         : base(dbConnectionFactory, "formas_pago")

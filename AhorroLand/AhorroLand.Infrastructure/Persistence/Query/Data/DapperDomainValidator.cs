@@ -1,7 +1,9 @@
 ﻿using AhorroLand.Shared.Domain.Abstractions;
 using AhorroLand.Shared.Domain.Interfaces;
 using Dapper;
+using System.ComponentModel.DataAnnotations.Schema;
 using System.Data;
+using System.Reflection;
 
 namespace AhorroLand.Infrastructure.DataAccess;
 
@@ -9,50 +11,78 @@ public class DapperDomainValidator : IDomainValidator
 {
     private readonly IDbConnection _dbConnection;
 
-    // Se inyecta la conexión a la base de datos (Ej. SqlConnection)
     public DapperDomainValidator(IDbConnection dbConnection)
     {
         _dbConnection = dbConnection;
     }
 
-    public async Task<bool> ExistsAsync<TEntity>(Guid id) where TEntity : AbsEntity
+    // ✅ CAMBIO 1: Ajustar la firma para aceptar <TEntity, TId>
+    public async Task<bool> ExistsAsync<TEntity, TId>(TId id)
+        where TEntity : AbsEntity<TId>
+        where TId : IGuidValueObject
     {
-        // 1. Obtener el nombre de la tabla
-        // NOTA: Debes tener un mecanismo para mapear TEntity al nombre de su tabla en la DB.
-        // Aquí usamos un nombre simple y genérico (Ej: Concepto -> "Conceptos").
-        var tableName = GetTableName<TEntity>();
-
-        // 2. Crear el query SQL más eficiente: SELECT 1
-        // Esto solo verifica la existencia de un registro, sin devolver datos pesados.
-        var sql = $@"
-            SELECT 1 
-            FROM {tableName} 
-            WHERE Id = @Id
-            LIMIT 1"; // O TOP 1 en SQL Server, para asegurar que la DB detenga la búsqueda al encontrar el primero.
-
-        var parameters = new { Id = id };
-
-        // 3. Ejecutar la consulta con Dapper
-        // Usamos QueryFirstOrDefaultAsync<int?>. Si encuentra algo, devuelve 1 (true). Si no, devuelve null (false).
-        var exists = await _dbConnection.QueryFirstOrDefaultAsync<int?>(sql, parameters);
-
-        // 4. Devolver true si existe un resultado (es decir, si 'exists' no es null)
-        return exists.HasValue;
-    }
-
-    // 💡 Método Auxiliar para obtener el nombre de la tabla
-    private static string GetTableName<TEntity>() where TEntity : AbsEntity
-    {
-        // ⭐ OPTIMIZACIÓN: Aquí puedes implementar un mapeador de atributos para obtener el nombre real de la tabla.
-        // Para simplificar, usamos el nombre de la clase en plural:
-        var entityName = typeof(TEntity).Name.ToLower();
-
-        if (entityName.EndsWith("s", StringComparison.OrdinalIgnoreCase))
+        // 1. Asegurar conexión
+        if (_dbConnection.State != ConnectionState.Open)
         {
-            return entityName;
+            _dbConnection.Open();
         }
 
-        // Caso simple de pluralización (ej: "Cuenta" -> "Cuentas")
-        return entityName + "s";
+        // 2. Obtener tabla
+        var tableName = GetTableName<TEntity>();
+
+        // 3. ✅ CAMBIO 2: Obtener el valor primitivo real para la DB
+        // Si TId es 'ClienteId', necesitamos el Guid de adentro.
+        // Si TId es 'Guid', usamos el valor directo.
+        var realIdValue = ExtractPrimitiveValue(id);
+
+        // 4. Query (Nota: asume que la columna PK se llama 'id')
+        var sql = $"SELECT 1 FROM {tableName} WHERE id = @Id LIMIT 1";
+
+        // 5. Ejecutar usando el valor primitivo
+        var result = await _dbConnection.ExecuteScalarAsync<int?>(sql, new { Id = realIdValue });
+
+        return result.HasValue;
+    }
+
+    // --- Métodos Privados Auxiliares ---
+
+    private static string GetTableName<TEntity>()
+    {
+        var type = typeof(TEntity);
+        var tableAttr = type.GetCustomAttribute<TableAttribute>();
+
+        if (tableAttr != null && !string.IsNullOrEmpty(tableAttr.Name))
+        {
+            return tableAttr.Name;
+        }
+        return type.Name.ToLower() + "s";
+    }
+
+    /// <summary>
+    /// Extrae el valor primitivo si 'id' es un Value Object (tiene propiedad 'Value').
+    /// Si es un tipo simple (Guid, int, string), lo devuelve tal cual.
+    /// </summary>
+    private static object ExtractPrimitiveValue<TId>(TId id)
+    {
+        if (id == null) return DBNull.Value;
+
+        var type = typeof(TId);
+
+        // Si es un tipo primitivo, string o Guid, devolverlo directamente
+        if (type.IsPrimitive || type == typeof(string) || type == typeof(Guid) || type == typeof(decimal))
+        {
+            return id;
+        }
+
+        // Si es un Value Object (ej. ClienteId), buscamos la propiedad "Value"
+        var valueProp = type.GetProperty("Value");
+        if (valueProp != null)
+        {
+            var value = valueProp.GetValue(id);
+            return value ?? DBNull.Value;
+        }
+
+        // Si no tiene propiedad Value, intentamos devolver el objeto (quizás tiene un TypeHandler registrado)
+        return id;
     }
 }

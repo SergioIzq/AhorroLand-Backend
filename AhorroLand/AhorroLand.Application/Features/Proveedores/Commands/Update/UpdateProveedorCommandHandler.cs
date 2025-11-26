@@ -1,24 +1,25 @@
-using AhorroLand.Domain;
+Ôªøusing AhorroLand.Domain;
 using AhorroLand.Shared.Application.Abstractions.Messaging.Abstracts.Commands;
 using AhorroLand.Shared.Application.Abstractions.Servicies;
 using AhorroLand.Shared.Application.Dtos;
 using AhorroLand.Shared.Domain.Interfaces;
 using AhorroLand.Shared.Domain.Interfaces.Repositories;
 using AhorroLand.Shared.Domain.ValueObjects;
+using AhorroLand.Shared.Domain.ValueObjects.Ids;
 
 namespace AhorroLand.Application.Features.Proveedores.Commands;
 
 /// <summary>
-/// Maneja la creaciÛn de una nueva entidad Proveedor.
+/// Maneja la creaci√≥n de una nueva entidad Proveedor.
 /// </summary>
 public sealed class UpdateProveedorCommandHandler
-    : AbsUpdateCommandHandler<Proveedor, ProveedorDto, UpdateProveedorCommand>
+    : AbsUpdateCommandHandler<Proveedor, ProveedorId, ProveedorDto, UpdateProveedorCommand>
 {
     public UpdateProveedorCommandHandler(
         IUnitOfWork unitOfWork,
-        IWriteRepository<Proveedor> writeRepository,
+        IWriteRepository<Proveedor, ProveedorId> writeRepository,
         ICacheService cacheService,
-        IReadRepositoryWithDto<Proveedor, ProveedorDto> readOnlyRepository
+        IReadRepositoryWithDto<Proveedor, ProveedorDto, ProveedorId> readOnlyRepository
         )
         : base(unitOfWork, writeRepository, cacheService)
     {
@@ -27,7 +28,7 @@ public sealed class UpdateProveedorCommandHandler
     protected override void ApplyChanges(Proveedor entity, UpdateProveedorCommand command)
     {
         // 1. Crear el Value Object 'Nombre' a partir del string del comando.
-        // Esto autom·ticamente ejecuta las reglas de validaciÛn del nombre.
+        // Esto autom√°ticamente ejecuta las reglas de validaci√≥n del nombre.
         var nuevoNombreVO = new Nombre(command.Nombre);
 
         entity.Update(

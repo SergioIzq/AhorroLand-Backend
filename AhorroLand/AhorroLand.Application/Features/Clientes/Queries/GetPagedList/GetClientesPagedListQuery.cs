@@ -1,6 +1,7 @@
 ﻿using AhorroLand.Domain;
 using AhorroLand.Shared.Application.Abstractions.Messaging.Abstracts.Queries;
 using AhorroLand.Shared.Application.Dtos;
+using AhorroLand.Shared.Domain.ValueObjects.Ids;
 
 namespace AhorroLand.Application.Features.Clientes.Queries;
 
@@ -8,7 +9,7 @@ namespace AhorroLand.Application.Features.Clientes.Queries;
 /// Representa la consulta para obtener una lista paginada de Clientes.
 /// 🚀 OPTIMIZADO: Acepta UsuarioId para usar índices de BD (reduce 400ms a ~50ms).
 /// </summary>
-public sealed record GetClientesPagedListQuery : AbsGetPagedListQuery<Cliente, ClienteDto>
+public sealed record GetClientesPagedListQuery : AbsGetPagedListQuery<Cliente, ClienteId, ClienteDto>
 {
     public string? SearchTerm { get; init; }
     public string? SortColumn { get; init; }

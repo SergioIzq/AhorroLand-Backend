@@ -1,26 +1,21 @@
-﻿using AhorroLand.Shared.Domain.Abstractions;
-using AhorroLand.Shared.Domain.Interfaces;
+﻿using AhorroLand.Domain.Traspasos.Eventos;
+using AhorroLand.Shared.Domain.Abstractions;
 using AhorroLand.Shared.Domain.ValueObjects;
+using AhorroLand.Shared.Domain.ValueObjects.Ids;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace AhorroLand.Domain;
 
-public sealed class Traspaso : AbsEntity, IDomainEvent
+[Table("traspasos")]
+public sealed class Traspaso : AbsEntity<TraspasoId>
 {
-    private readonly List<IDomainEvent> _domainEvents = new();
-    public IReadOnlyList<IDomainEvent> GetDomainEvents() => _domainEvents.ToList();
-
-    public void RaiseDomainEvent(IDomainEvent domainEvent)
+    private Traspaso() : base(new TraspasoId(Guid.Empty))
     {
-        _domainEvents.Add(domainEvent);
-    }
 
-    private Traspaso() : base(Guid.Empty)
-    {
-        
     }
 
     private Traspaso(
-        Guid id,
+        TraspasoId id,
         CuentaId cuentaOrigen,
         CuentaId cuentaDestino,
         Cantidad importe,
@@ -60,13 +55,15 @@ public sealed class Traspaso : AbsEntity, IDomainEvent
         }
 
         var traspaso = new Traspaso(
-            Guid.NewGuid(),
+            new TraspasoId(Guid.NewGuid()),
             cuentaOrigen,
             cuentaDestino,
             importe,
             fecha,
             usuarioId,
             descripcion);
+
+        traspaso.AddDomainEvent(new TraspasoRegistradoDomainEvent(traspaso.Id.Value, cuentaOrigen.Value, cuentaDestino.Value, importe));
 
         return traspaso;
     }

@@ -1,10 +1,11 @@
 ﻿using AhorroLand.Domain;
 using AhorroLand.Infrastructure.Persistence.Query;
 using AhorroLand.Shared.Application.Dtos;
+using AhorroLand.Shared.Domain.ValueObjects.Ids;
 
 namespace AhorroLand.Infrastructure.Persistence.Data.Ingresos
 {
-    public class IngresoReadRepository : AbsReadRepository<Ingreso, IngresoDto>, IIngresoReadRepository
+    public class IngresoReadRepository : AbsReadRepository<Ingreso, IngresoDto, IngresoId>, IIngresoReadRepository
     {
         public IngresoReadRepository(IDbConnectionFactory dbConnectionFactory)
             : base(dbConnectionFactory, "ingresos")

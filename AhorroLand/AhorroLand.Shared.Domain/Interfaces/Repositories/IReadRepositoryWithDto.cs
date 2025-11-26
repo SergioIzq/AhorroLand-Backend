@@ -8,9 +8,10 @@ namespace AhorroLand.Shared.Domain.Interfaces.Repositories
     /// Permite obtener DTOs directamente desde la base de datos sin mapeo intermedio.
     /// ✅ Esta es la ÚNICA interfaz de lectura que debe usarse en la aplicación.
     /// </summary>
-    public interface IReadRepositoryWithDto<T, TDto>
-        where T : AbsEntity
+    public interface IReadRepositoryWithDto<T, TDto, TId>
+        where T : AbsEntity<TId>
         where TDto : class
+        where TId : IGuidValueObject
     {
         /// <summary>
         /// 🚀 OPTIMIZADO: Obtiene un DTO por ID directamente desde la base de datos.

@@ -2,16 +2,19 @@
 using AhorroLand.Shared.Domain.Abstractions;
 using AhorroLand.Shared.Domain.Abstractions.Results;
 using AhorroLand.Shared.Domain.ValueObjects;
+using AhorroLand.Shared.Domain.ValueObjects.Ids;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace AhorroLand.Domain;
 
-public sealed class IngresoProgramado : AbsEntity
+[Table("ingresos_programados")]
+public sealed class IngresoProgramado : AbsEntity<IngresoProgramadoId>
 {
-    private IngresoProgramado() : base(Guid.Empty)
+    private IngresoProgramado() : base(new IngresoProgramadoId(Guid.Empty))
     {
     }
     private IngresoProgramado(
-        Guid id,
+        IngresoProgramadoId id,
         Cantidad importe,
         DateTime fechaEjecucion,
         ConceptoId conceptoId,
@@ -67,8 +70,8 @@ public sealed class IngresoProgramado : AbsEntity
         string hangfireJobId,
         Descripcion? descripcion = null)
     {
-        var ingreso = new IngresoProgramado(
-            Guid.NewGuid(),
+        var ingresoProgram = new IngresoProgramado(
+            new IngresoProgramadoId(Guid.NewGuid()),
             importe,
             fechaEjecucion,
             conceptoId,
@@ -82,13 +85,13 @@ public sealed class IngresoProgramado : AbsEntity
             descripcion);
 
         // 🔥 LANZAR EVENTO DE DOMINIO
-        ingreso.AddDomainEvent(new IngresoProgramadoCreadoEvent(
-            ingreso.Id,
+        ingresoProgram.AddDomainEvent(new IngresoProgramadoCreadoEvent(
+            ingresoProgram.Id.Value,
             frecuencia,
             fechaEjecucion
         ));
 
-        return ingreso;
+        return ingresoProgram;
     }
 
     /// <summary>

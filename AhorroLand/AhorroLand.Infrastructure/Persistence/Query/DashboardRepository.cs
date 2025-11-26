@@ -2,6 +2,7 @@
 using Dapper;
 using System.Globalization;
 using ApplicationInterface = AhorroLand.Application.Interfaces;
+using AhorroLand.Shared.Domain.ValueObjects.Ids;
 
 namespace AhorroLand.Infrastructure.Persistence.Query;
 

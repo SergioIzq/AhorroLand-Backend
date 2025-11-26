@@ -80,17 +80,11 @@ public class IngresosController : AbsController
             Fecha = request.Fecha,
             Descripcion = request.Descripcion,
             CategoriaId = request.CategoriaId,
-            CategoriaNombre = request.CategoriaNombre,
             ConceptoId = request.ConceptoId,
-            ConceptoNombre = request.ConceptoNombre,
             ClienteId = request.ClienteId,
-            ClienteNombre = request.ClienteNombre,
             PersonaId = request.PersonaId,
-            PersonaNombre = request.PersonaNombre,
             CuentaId = request.CuentaId,
-            CuentaNombre = request.CuentaNombre,
             FormaPagoId = request.FormaPagoId,
-            FormaPagoNombre = request.FormaPagoNombre,
             UsuarioId = request.UsuarioId
         };
 
@@ -99,7 +93,7 @@ public class IngresosController : AbsController
         return HandleResultForCreation(
             result,
             nameof(GetById),
-        new { id = result.Value.Id }
+        new { id = result.Value }
         );
     }
 

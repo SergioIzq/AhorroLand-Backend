@@ -107,7 +107,7 @@ public class ConceptosController : AbsController
      return HandleResultForCreation(
      result,
     nameof(GetById),
-            new { id = result.Value.Id }
+            new { id = result.Value }
         );
     }
 

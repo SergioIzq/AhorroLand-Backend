@@ -1,4 +1,4 @@
-using AhorroLand.Application.Features.Gastos.Commands;
+ï»¿using AhorroLand.Application.Features.Gastos.Commands;
 using AhorroLand.Domain;
 using AhorroLand.Shared.Application.Abstractions.Messaging.Abstracts.Commands;
 using AhorroLand.Shared.Application.Abstractions.Servicies;
@@ -6,15 +6,16 @@ using AhorroLand.Shared.Domain.Abstractions.Results;
 using AhorroLand.Shared.Domain.Interfaces;
 using AhorroLand.Shared.Domain.Interfaces.Repositories;
 using AhorroLand.Shared.Domain.ValueObjects;
+using AhorroLand.Shared.Domain.ValueObjects.Ids;
 
 public sealed class CreateGastoCommandHandler
-    : AbsCreateCommandHandler<Gasto, Guid, CreateGastoCommand>
+    : AbsCreateCommandHandler<Gasto, GastoId, CreateGastoCommand>
 {
     private readonly IDomainValidator _validator;
 
     public CreateGastoCommandHandler(
         IUnitOfWork unitOfWork,
-        IWriteRepository<Gasto> writeRepository,
+        IWriteRepository<Gasto, GastoId> writeRepository,
         ICacheService cacheService,
         IDomainValidator validator)
     : base(unitOfWork, writeRepository, cacheService)
@@ -27,12 +28,12 @@ public sealed class CreateGastoCommandHandler
     {
         var existenceTasks = new List<Task<bool>>
         {
-            _validator.ExistsAsync<Concepto>(command.ConceptoId),
-            _validator.ExistsAsync<Categoria>(command.CategoriaId),
-            _validator.ExistsAsync<Cuenta>(command.CuentaId),
-            _validator.ExistsAsync<FormaPago>(command.FormaPagoId),
-            _validator.ExistsAsync<Proveedor>(command.ProveedorId),
-            _validator.ExistsAsync<Persona>(command.PersonaId)
+            _validator.ExistsAsync<Concepto, ConceptoId>(new ConceptoId(command.ConceptoId)),
+            _validator.ExistsAsync<Categoria, CategoriaId>(new CategoriaId(command.CategoriaId)),
+            _validator.ExistsAsync < Cuenta, CuentaId >(new CuentaId(command.CuentaId)),
+            _validator.ExistsAsync < FormaPago, FormaPagoId >(new FormaPagoId(command.FormaPagoId)),
+            _validator.ExistsAsync < Proveedor, ProveedorId >(new ProveedorId(command.ProveedorId)),
+            _validator.ExistsAsync < Persona, PersonaId >(new PersonaId(command.PersonaId))
         };
 
         var results = await Task.WhenAll(existenceTasks);
@@ -40,7 +41,7 @@ public sealed class CreateGastoCommandHandler
         if (results.Any(r => !r))
         {
             return Result.Failure<Guid>(
-                Error.NotFound("Una o más entidades referenciadas no existen o el ID es incorrecto."));
+                Error.NotFound("Una o mÃ¡s entidades referenciadas no existen o el ID es incorrecto."));
         }
 
         try
@@ -62,7 +63,7 @@ public sealed class CreateGastoCommandHandler
 
             var usuarioId = new UsuarioId(command.UsuarioId);
 
-            // 3. CREACIÓN DE LA ENTIDAD DE DOMINIO (Gasto)
+            // 3. CREACIÃ“N DE LA ENTIDAD DE DOMINIO (Gasto)
             var gasto = Gasto.Create(
                 importeVO,
                 fechaVO,
@@ -85,7 +86,7 @@ public sealed class CreateGastoCommandHandler
         }
         catch (ArgumentException ex)
         {
-            // Captura de errores de validación de Value Objects
+            // Captura de errores de validaciÃ³n de Value Objects
             return Result.Failure<Guid>(Error.Validation(ex.Message));
         }
         catch (Exception ex)
@@ -96,6 +97,6 @@ public sealed class CreateGastoCommandHandler
 
     protected override Gasto CreateEntity(CreateGastoCommand command)
     {
-        throw new NotImplementedException("CreateEntity no debe usarse. La lógica de creación asíncrona reside en el método Handle.");
+        throw new NotImplementedException("CreateEntity no debe usarse. La lÃ³gica de creaciÃ³n asÃ­ncrona reside en el mÃ©todo Handle.");
     }
 }

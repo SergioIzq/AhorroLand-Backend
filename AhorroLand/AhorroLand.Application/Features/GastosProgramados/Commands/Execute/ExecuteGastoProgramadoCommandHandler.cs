@@ -1,4 +1,4 @@
-using AhorroLand.Application.Features.Gastos.Commands;
+ï»¿using AhorroLand.Application.Features.Gastos.Commands;
 using AhorroLand.Domain;
 using AhorroLand.Shared.Application.Abstractions.Messaging;
 using AhorroLand.Shared.Application.Dtos;
@@ -6,21 +6,22 @@ using AhorroLand.Shared.Domain.Abstractions.Results;
 using AhorroLand.Shared.Domain.Interfaces.Repositories;
 using MediatR;
 using Microsoft.Extensions.Logging;
+using AhorroLand.Shared.Domain.ValueObjects.Ids;
 
 namespace AhorroLand.Application.Features.GastosProgramados.Commands.Execute;
 
 /// <summary>
-/// Handler que ejecuta la lógica de negocio cuando Hangfire activa el job de un GastoProgramado.
+/// Handler que ejecuta la lÃ³gica de negocio cuando Hangfire activa el job de un GastoProgramado.
 /// Optimizado para minimizar queries y allocations.
 /// </summary>
 public sealed class ExecuteGastoProgramadoCommandHandler : ICommandHandler<ExecuteGastoProgramadoCommand>
 {
-    private readonly IReadRepositoryWithDto<GastoProgramado, GastoProgramadoDto> _gastoProgramadoReadRepository;
+    private readonly IReadRepositoryWithDto<GastoProgramado, GastoProgramadoDto, GastoProgramadoId> _gastoProgramadoReadRepository;
     private readonly IMediator _mediator;
     private readonly ILogger<ExecuteGastoProgramadoCommandHandler> _logger;
 
     public ExecuteGastoProgramadoCommandHandler(
-        IReadRepositoryWithDto<GastoProgramado, GastoProgramadoDto> gastoProgramadoReadRepository,
+        IReadRepositoryWithDto<GastoProgramado, GastoProgramadoDto, GastoProgramadoId> gastoProgramadoReadRepository,
         IMediator mediator,
         ILogger<ExecuteGastoProgramadoCommandHandler> logger)
     {
@@ -33,7 +34,7 @@ public sealed class ExecuteGastoProgramadoCommandHandler : ICommandHandler<Execu
     {
         try
         {
-            // ?? OPTIMIZACIÓN: Log estructurado (más eficiente que string interpolation)
+            // ?? OPTIMIZACIÃ“N: Log estructurado (mÃ¡s eficiente que string interpolation)
             if (_logger.IsEnabled(LogLevel.Information))
             {
                 _logger.LogInformation("Ejecutando GastoProgramado {GastoProgramadoId}", request.GastoProgramadoId);
@@ -54,12 +55,12 @@ public sealed class ExecuteGastoProgramadoCommandHandler : ICommandHandler<Execu
             {
                 if (_logger.IsEnabled(LogLevel.Information))
                 {
-                    _logger.LogInformation("GastoProgramado {GastoProgramadoId} está inactivo, se omite la ejecución", request.GastoProgramadoId);
+                    _logger.LogInformation("GastoProgramado {GastoProgramadoId} estÃ¡ inactivo, se omite la ejecuciÃ³n", request.GastoProgramadoId);
                 }
                 return Result.Success();
             }
 
-            // ?? OPTIMIZACIÓN: Crear el comando de forma más eficiente
+            // ?? OPTIMIZACIÃ“N: Crear el comando de forma mÃ¡s eficiente
             var descripcion = gastoProgramado.Descripcion;
             var createGastoCommand = new CreateGastoCommand
             {
@@ -72,10 +73,10 @@ public sealed class ExecuteGastoProgramadoCommandHandler : ICommandHandler<Execu
                 CuentaId = gastoProgramado.CuentaId,
                 FormaPagoId = gastoProgramado.FormaPagoId,
                 UsuarioId = gastoProgramado.UsuarioId,
-                // ?? OPTIMIZACIÓN: Evitar string interpolation si no es necesario
+                // ?? OPTIMIZACIÃ“N: Evitar string interpolation si no es necesario
                 Descripcion = !string.IsNullOrEmpty(descripcion)
                     ? descripcion
-                    : $"Gasto automático desde programación {gastoProgramado.Id}"
+                    : $"Gasto automÃ¡tico desde programaciÃ³n {gastoProgramado.Id}"
             };
 
             var result = await _mediator.Send(createGastoCommand, cancellationToken);
@@ -98,7 +99,7 @@ public sealed class ExecuteGastoProgramadoCommandHandler : ICommandHandler<Execu
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error inesperado al ejecutar GastoProgramado {GastoProgramadoId}", request.GastoProgramadoId);
-            return Result.Failure(Error.Failure("Execute.GastoProgramado", "Error de Ejecución", ex.Message));
+            return Result.Failure(Error.Failure("Execute.GastoProgramado", "Error de EjecuciÃ³n", ex.Message));
         }
     }
 }
