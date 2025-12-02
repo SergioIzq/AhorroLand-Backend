@@ -14,7 +14,7 @@ namespace AhorroLand.Shared.Application.Abstractions.Messaging.Abstracts;
 /// <typeparam name="TEntity">El tipo de entidad que el command handler manipula, debe heredar de AbsEntity.</typeparam>
 public abstract class AbsCommandHandler<TEntity, TId> : IAbsCommandHandlerBase<TEntity, TId>
     where TEntity : AbsEntity<TId>
-    where TId: IGuidValueObject
+    where TId : IGuidValueObject
 {
     protected readonly IUnitOfWork _unitOfWork;
     protected readonly IWriteRepository<TEntity, TId> _writeRepository;
@@ -46,21 +46,14 @@ public abstract class AbsCommandHandler<TEntity, TId> : IAbsCommandHandlerBase<T
     /// <returns>Un Result que contiene la entidad creada en caso de éxito, o Error.Conflict si falla.</returns>
     public async Task<Result<Guid>> CreateAsync(TEntity entity, CancellationToken cancellationToken = default)
     {
-        try
-        {
-            _writeRepository.Add(entity);
+        _writeRepository.Add(entity);
 
-            await _unitOfWork.SaveChangesAsync(cancellationToken);
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-            await InvalidateIndividualCacheAsync(entity.Id.Value);
+        await InvalidateIndividualCacheAsync(entity.Id.Value);
 
-            return Result.Success(entity.Id.Value);
-        }
-        catch (Exception ex)
-        {
-            string detail = $"Error inesperado al crear {typeof(TEntity).Name}: {ex.Message}";
-            return Result.Failure<Guid>(Error.Conflict(detail));
-        }
+        return Result.Success(entity.Id.Value);
+
     }
 
     /// <summary>
@@ -71,20 +64,12 @@ public abstract class AbsCommandHandler<TEntity, TId> : IAbsCommandHandlerBase<T
     /// <returns>Un Result de éxito si la actualización fue exitosa, o Error.UpdateFailure si falla.</returns>
     public async Task<Result<Guid>> UpdateAsync(TEntity entity, CancellationToken cancellationToken = default)
     {
-        try
-        {
-            _writeRepository.Update(entity);
-            await _unitOfWork.SaveChangesAsync(cancellationToken);
+        _writeRepository.Update(entity);
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-            await InvalidateIndividualCacheAsync(entity.Id.Value);
+        await InvalidateIndividualCacheAsync(entity.Id.Value);
 
-            return Result.Success(entity.Id.Value);
-        }
-        catch (Exception ex)
-        {
-            string detail = $"Error al actualizar {typeof(TEntity).Name}: {ex.Message}";
-            return Result.Failure<Guid>(Error.UpdateFailure(detail));
-        }
+        return Result.Success(entity.Id.Value);
     }
 
     /// <summary>
@@ -95,20 +80,12 @@ public abstract class AbsCommandHandler<TEntity, TId> : IAbsCommandHandlerBase<T
     /// <returns>Un Result de éxito si la eliminación fue exitosa, o Error.DeleteFailure si falla.</returns>
     public async Task<Result> DeleteAsync(TEntity entity, CancellationToken cancellationToken = default)
     {
-        try
-        {
-            _writeRepository.Delete(entity);
-            await _unitOfWork.SaveChangesAsync(cancellationToken);
+        _writeRepository.Delete(entity);
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-            await InvalidateIndividualCacheAsync(entity.Id.Value);
+        await InvalidateIndividualCacheAsync(entity.Id.Value);
 
-            return Result.Success();
-        }
-        catch (Exception ex)
-        {
-            string detail = $"Error al eliminar {typeof(TEntity).Name}: {ex.Message}";
-            return Result.Failure(Error.DeleteFailure(detail));
-        }
+        return Result.Success();
     }
 
     /// <summary>

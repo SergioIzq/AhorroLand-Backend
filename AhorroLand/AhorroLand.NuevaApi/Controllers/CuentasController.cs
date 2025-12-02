@@ -24,7 +24,7 @@ public class CuentasController : AbsController
     {
         var query = new GetCuentasPagedListQuery(page, pageSize);
         var result = await _sender.Send(query);
-        return HandlePagedResult(result); // ??
+        return HandleResult(result); // ??
     }
 
     /// <summary>
@@ -49,7 +49,7 @@ public class CuentasController : AbsController
         };
 
         var result = await _sender.Send(query);
-   return HandleListResult(result); // ??
+   return HandleResult(result); // ??
     }
 
     /// <summary>
@@ -74,7 +74,7 @@ public class CuentasController : AbsController
         };
 
         var result = await _sender.Send(query);
-  return HandleListResult(result); // ??
+  return HandleResult(result); // ??
     }
 
     [Authorize]

@@ -6,6 +6,7 @@
     public record ProveedorDto(
         Guid Id,
         string Nombre,
-        Guid UsuarioId
+        Guid UsuarioId,
+        DateTime FechaCreacion
     );
 }

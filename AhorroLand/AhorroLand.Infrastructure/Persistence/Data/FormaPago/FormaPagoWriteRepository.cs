@@ -31,21 +31,14 @@ namespace AhorroLand.Infrastructure.Persistence.Data.FormasPago
             await base.CreateAsync(entity, cancellationToken);
         }
 
-        public override void Update(FormaPago entity)
+        public override async void Update(FormaPago entity)
         {
-            throw new NotSupportedException(
-                "Use UpdateAsync para actualizar formas de pago con validación de duplicados.");
-        }
-
-        public override async Task UpdateAsync(FormaPago entity, CancellationToken cancellationToken = default)
-        {
-            await base.UpdateAsync(entity, cancellationToken);
+            base.Update(entity);
 
             var exists = await _readRepository.ExistsWithSameNameExceptAsync(
                 entity.Nombre,
                 entity.UsuarioId,
-                entity.Id.Value,
-                cancellationToken);
+                entity.Id.Value);
 
             if (exists)
             {

@@ -35,17 +35,17 @@ public abstract class GetRecentQueryHandler<TEntity, TDto, TId, TQuery>
         // Validación: debe tener usuarioId
         if (!query.UsuarioId.HasValue)
         {
-    return Result.Failure<IEnumerable<TDto>>(
-     Error.Validation("El ID de usuario es requerido."));
+            return Result.Failure<IEnumerable<TDto>>(
+             Error.Validation("El ID de usuario es requerido."));
         }
 
- // ?? CACHE: Intentar obtener del cache (reduce carga en BD)
+        // ?? CACHE: Intentar obtener del cache (reduce carga en BD)
         string cacheKey = $"{typeof(TEntity).Name}:recent:{query.UsuarioId}:{query.Limit}";
         var cachedResult = await _cacheService.GetAsync<IEnumerable<TDto>>(cacheKey);
 
-   if (cachedResult != null)
+        if (cachedResult != null)
         {
-   return Result.Success(cachedResult);
+            return Result.Success(cachedResult);
         }
 
         // ?? Búsqueda rápida de elementos recientes
@@ -54,12 +54,12 @@ public abstract class GetRecentQueryHandler<TEntity, TDto, TId, TQuery>
          query.Limit,
    cancellationToken);
 
-    // ?? CACHE: Guardar en cache por 30 segundos (datos que cambian con frecuencia)
-      await _cacheService.SetAsync(
-   cacheKey,
-       results,
-            slidingExpiration: TimeSpan.FromSeconds(30));
+        // ?? CACHE: Guardar en cache por 30 segundos (datos que cambian con frecuencia)
+        await _cacheService.SetAsync(
+     cacheKey,
+         results,
+              slidingExpiration: TimeSpan.FromSeconds(30));
 
-  return Result.Success(results);
+        return Result.Success(results);
     }
 }

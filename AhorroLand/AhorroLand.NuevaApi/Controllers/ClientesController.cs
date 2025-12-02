@@ -47,7 +47,7 @@ public class ClientesController : AbsController
         };
 
         var result = await _sender.Send(query);
-        return HandlePagedResult(result); // 🆕
+        return HandleResult(result); // 🆕
     }
 
     /// <summary>
@@ -76,7 +76,7 @@ public class ClientesController : AbsController
         };
 
         var result = await _sender.Send(query);
-        return HandleListResult(result); // 🆕
+        return HandleResult(result); // 🆕
     }
 
     /// <summary>
@@ -102,7 +102,7 @@ public class ClientesController : AbsController
         };
 
         var result = await _sender.Send(query);
-        return HandleListResult(result); // 🆕
+        return HandleResult(result); // 🆕
     }
 
     [Authorize]

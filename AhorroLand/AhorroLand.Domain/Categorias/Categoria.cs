@@ -22,13 +22,12 @@ public sealed class Categoria : AbsEntity<CategoriaId>
     }
 
     public Nombre Nombre { get; private set; }
-    // ⚠️ NOTA: Descripcion no está mapeada en la BD, solo se usa en memoria
     public Descripcion? Descripcion { get; private set; }
     public UsuarioId IdUsuario { get; private set; }
 
     public static Categoria Create(Nombre nombre, UsuarioId usuarioId, Descripcion? descripcion = null)
     {
-        var categoria = new Categoria(new CategoriaId(Guid.NewGuid()), nombre, usuarioId, descripcion); // Descripcion puede ser null
+        var categoria = new Categoria(new CategoriaId(Guid.NewGuid()), nombre, usuarioId, descripcion);
 
         return categoria;
     }

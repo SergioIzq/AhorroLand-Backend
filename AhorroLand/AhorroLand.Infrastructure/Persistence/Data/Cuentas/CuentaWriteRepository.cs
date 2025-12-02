@@ -31,23 +31,16 @@ namespace AhorroLand.Infrastructure.Persistence.Data.Cuentas
             await base.CreateAsync(entity, cancellationToken);
         }
 
-        public override void Update(Cuenta entity)
-        {
-            throw new NotSupportedException(
-                "Use UpdateAsync para actualizar cuentas con validación de duplicados.");
-        }
-
-        public override async Task UpdateAsync(Cuenta entity, CancellationToken cancellationToken = default)
+        public override async void Update(Cuenta entity)
         {
             // Primero verificar que la entidad existe (validación del base)
-            await base.UpdateAsync(entity, cancellationToken);
+            base.Update(entity);
 
             // Luego validar duplicados
             var exists = await _readRepository.ExistsWithSameNameExceptAsync(
                 entity.Nombre,
                 entity.UsuarioId,
-                entity.Id.Value,
-                cancellationToken);
+                entity.Id.Value);
 
             if (exists)
             {

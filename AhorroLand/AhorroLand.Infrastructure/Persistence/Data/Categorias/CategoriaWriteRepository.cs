@@ -32,27 +32,19 @@ namespace AhorroLand.Infrastructure.Persistence.Data.Categorias
             await base.CreateAsync(entity, cancellationToken);
         }
 
-        public override void Update(Categoria entity)
-        {
-            // Para updates síncronos, lanzamos una excepción indicando que se debe usar el método asíncrono
-            throw new NotSupportedException(
-                "Use UpdateAsync para actualizar categorías con validación de duplicados.");
-        }
-
         /// <summary>
         /// Actualiza una categoría validando que no exista duplicado.
         /// </summary>
-        public override async Task UpdateAsync(Categoria entity, CancellationToken cancellationToken = default)
+        public override async void Update(Categoria entity)
         {
             // Primero verificar que la entidad existe (validación del base)
-            await base.UpdateAsync(entity, cancellationToken);
+            base.Update(entity);
 
             // Luego validar duplicados
             var exists = await _readRepository.ExistsWithSameNameExceptAsync(
                 entity.Nombre,
                 entity.IdUsuario,
-                entity.Id.Value,
-                cancellationToken);
+                entity.Id.Value);
 
             if (exists)
             {

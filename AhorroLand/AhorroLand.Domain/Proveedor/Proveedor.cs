@@ -5,7 +5,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace AhorroLand.Domain;
 
-[Table("personas")]
+[Table("proveedores")]
 public sealed class Proveedor : AbsEntity<ProveedorId>
 {
     // Constructor privado sin parámetros para EF Core

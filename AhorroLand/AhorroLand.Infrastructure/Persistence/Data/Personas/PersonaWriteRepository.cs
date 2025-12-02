@@ -31,21 +31,14 @@ namespace AhorroLand.Infrastructure.Persistence.Data.Personas
             await base.CreateAsync(entity, cancellationToken);
         }
 
-        public override void Update(Persona entity)
+        public override async void Update(Persona entity)
         {
-            throw new NotSupportedException(
-                "Use UpdateAsync para actualizar personas con validación de duplicados.");
-        }
-
-        public override async Task UpdateAsync(Persona entity, CancellationToken cancellationToken = default)
-        {
-            await base.UpdateAsync(entity, cancellationToken);
+            base.Update(entity);
 
             var exists = await _readRepository.ExistsWithSameNameExceptAsync(
                 entity.Nombre,
                 entity.UsuarioId,
-                entity.Id.Value,
-                cancellationToken);
+                entity.Id.Value);
 
             if (exists)
             {

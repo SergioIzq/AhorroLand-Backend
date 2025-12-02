@@ -1,8 +1,11 @@
+using AhorroLand.Application.Features.GastosProgramados.Commands.Execute;
 using AhorroLand.Domain;
 using AhorroLand.Shared.Application.Abstractions.Messaging;
 using AhorroLand.Shared.Application.Interfaces;
+using AhorroLand.Shared.Domain.Abstractions.Errors;
 using AhorroLand.Shared.Domain.Abstractions.Results;
 using AhorroLand.Shared.Domain.ValueObjects;
+using Microsoft.Extensions.Logging;
 
 namespace AhorroLand.Application.Features.Auth.Commands.Login;
 
@@ -11,52 +14,57 @@ public sealed class LoginCommandHandler : ICommandHandler<LoginCommand, LoginRes
     private readonly IUsuarioReadRepository _usuarioReadRepository;
     private readonly IPasswordHasher _passwordHasher;
     private readonly IJwtTokenGenerator _jwtTokenGenerator;
+    private readonly ILogger<LoginCommandHandler> _logger;
 
     public LoginCommandHandler(
         IUsuarioReadRepository usuarioReadRepository,
-   IPasswordHasher passwordHasher,
-        IJwtTokenGenerator jwtTokenGenerator)
+        IPasswordHasher passwordHasher,
+        IJwtTokenGenerator jwtTokenGenerator,
+        ILogger<LoginCommandHandler> logger
+        )
     {
         _usuarioReadRepository = usuarioReadRepository;
         _passwordHasher = passwordHasher;
         _jwtTokenGenerator = jwtTokenGenerator;
+        _logger = logger;
     }
 
     public async Task<Result<LoginResponse>> Handle(LoginCommand request, CancellationToken cancellationToken)
     {
         try
         {
-            // 1. Buscar usuario por correo
             var emailVO = new Email(request.Correo);
             var usuario = await _usuarioReadRepository.GetByEmailAsync(emailVO, cancellationToken);
 
-            if (usuario == null)
+            if (usuario is null)
             {
-                return Result.Failure<LoginResponse>(new Error("Auth.InvalidCredentials", "Credenciales inválidas."));
+                // SEGURIDAD: Decimos "Credenciales inválidas" para no revelar que el email no existe.
+                return Result.Failure<LoginResponse>(AuthErrors.InvalidCredentials);
             }
 
-            // 2. Verificar que el usuario esté activo
-            if (!usuario.Activo)
-            {
-                return Result.Failure<LoginResponse>(new Error("Auth.AccountNotActivated", "La cuenta no ha sido activada. Por favor, confirma tu correo electrónico."));
-            }
-
-            // 3. Verificar la contraseña
+            // 4. Verificar contraseña
             var isPasswordValid = _passwordHasher.VerifyPassword(request.Contrasena, usuario.ContrasenaHash.Value);
 
             if (!isPasswordValid)
             {
-                return Result.Failure<LoginResponse>(new Error("Auth.InvalidCredentials", "Credenciales inválidas."));
+                // Mismo error que arriba. El atacante no sabe si falló el email o el pass.
+                return Result.Failure<LoginResponse>(AuthErrors.InvalidCredentials);
             }
 
-            // 4. Generar el token JWT
+            if (!usuario.Activo)
+            {
+                return Result.Failure<LoginResponse>(UsuarioErrors.DeactivatedAccount);
+            }
+
             var (token, expiresAt) = _jwtTokenGenerator.GenerateToken(usuario);
 
             return Result.Success(new LoginResponse(token, expiresAt));
         }
         catch (Exception ex)
         {
-            return Result.Failure<LoginResponse>(new Error("Auth.LoginError", ex.Message));
+            _logger.LogCritical(ex, "Error during login for email {Email}", request.Correo);
+
+            return Result.Failure<LoginResponse>(SystemErrors.InternalServerError);
         }
     }
 }

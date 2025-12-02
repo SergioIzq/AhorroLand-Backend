@@ -25,7 +25,7 @@ public class ProveedoresController : AbsController
     {
         var query = new GetProveedoresPagedListQuery(page, pageSize);
         var result = await _sender.Send(query);
-        return HandlePagedResult(result); // ??
+        return HandleResult(result); // ??
     }
 
     /// <summary>
@@ -50,7 +50,7 @@ public class ProveedoresController : AbsController
         };
 
         var result = await _sender.Send(query);
-        return HandleListResult(result); // ??
+        return HandleResult(result); // ??
     }
 
     /// <summary>
@@ -75,7 +75,7 @@ public class ProveedoresController : AbsController
         };
 
         var result = await _sender.Send(query);
-        return HandleListResult(result); // ??
+        return HandleResult(result); // ??
     }
 
     [Authorize]

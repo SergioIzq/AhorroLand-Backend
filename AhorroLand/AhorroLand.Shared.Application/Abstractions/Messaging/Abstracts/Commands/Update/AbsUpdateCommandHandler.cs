@@ -8,10 +8,6 @@ using MediatR;
 
 namespace AhorroLand.Shared.Application.Abstractions.Messaging.Abstracts.Commands;
 
-/// <summary>
-/// Handler base para comandos de actualización.
-/// ✅ OPTIMIZADO: Usa el repositorio de escritura para obtener la entidad con tracking.
-/// </summary>
 public abstract class AbsUpdateCommandHandler<TEntity, TId, TDto, TCommand>
     : AbsCommandHandler<TEntity, TId>, IRequestHandler<TCommand, Result<TDto>>
     where TEntity : AbsEntity<TId>
@@ -19,7 +15,7 @@ public abstract class AbsUpdateCommandHandler<TEntity, TId, TDto, TCommand>
     where TId : IGuidValueObject
     where TDto : class
 {
-    public AbsUpdateCommandHandler(
+    protected AbsUpdateCommandHandler(
         IUnitOfWork unitOfWork,
         IWriteRepository<TEntity, TId> writeRepository,
         ICacheService cacheService)
@@ -27,32 +23,35 @@ public abstract class AbsUpdateCommandHandler<TEntity, TId, TDto, TCommand>
     {
     }
 
-    // 🔑 MÉTODO ABSTRACTO: Obliga al Command Handler concreto a implementar la lógica de actualización
+    // Método abstracto para que el hijo aplique los cambios
     protected abstract void ApplyChanges(TEntity entity, TCommand command);
 
     public async Task<Result<TDto>> Handle(TCommand command, CancellationToken cancellationToken)
     {
-        // 1. 🔧 FIX: Usar el repositorio de escritura para obtener la entidad con tracking
+        // 1. Obtener la entidad (Tracking activado para Update)
         var entity = await _writeRepository.GetByIdAsync(command.Id, cancellationToken);
 
         if (entity is null)
         {
-            return Result.Failure<TDto>(Error.NotFound($"Entidad {typeof(TEntity).Name} con ID '{command.Id}' no encontrada."));
+            return Result.Failure<TDto>(Error.NotFound($"{typeof(TEntity).Name} con ID '{command.Id}' no encontrada."));
         }
 
-        // 2. Aplicar la lógica de actualización de dominio llamando al método abstracto
+        // 2. Aplicar lógica de dominio (Value Objects)
+        // Aquí capturamos errores de validación de negocio (ej. "Nombre vacío", "Precio negativo")
         try
         {
             ApplyChanges(entity, command);
         }
-        catch (InvalidOperationException ex)
+        catch (Exception ex) when (ex is ArgumentException || ex is InvalidOperationException)
         {
+            // Transformamos la excepción del Value Object en un Result.Failure limpio
             return Result.Failure<TDto>(
-                Error.Validation($"Error de dominio al actualizar {typeof(TEntity).Name}: {ex.Message}")
+                Error.Validation(ex.Message)
             );
         }
 
-        // 3. Persistencia: Usar el método base, que maneja SaveChanges y Cache Invalidation
+        // 3. Persistencia
+        // Si hay error de BD (ej. Nombre duplicado), UpdateAsync dejará que suba al Middleware Global (que devuelve 409)
         var result = await UpdateAsync(entity, cancellationToken);
 
         if (result.IsFailure)
@@ -60,9 +59,8 @@ public abstract class AbsUpdateCommandHandler<TEntity, TId, TDto, TCommand>
             return Result.Failure<TDto>(result.Error);
         }
 
-        // 4. Mapeo: Mapear la entidad actualizada a DTO para la respuesta
+        // 4. Mapeo y Retorno
         var dto = entity.Adapt<TDto>();
-
         return Result.Success(dto);
     }
 }

@@ -23,7 +23,7 @@ public class IngresosController : AbsController
     {
         var query = new GetIngresosPagedListQuery(page, pageSize);
         var result = await _sender.Send(query);
-        return HandlePagedResult(result); // 🆕
+        return HandleResult(result); // 🆕
     }
 
     /// <summary>
@@ -58,7 +58,7 @@ public class IngresosController : AbsController
         };
 
         var result = await _sender.Send(query);
-        return HandlePagedResult(result); // 🆕
+        return HandleResult(result); // 🆕
     }
 
     [Authorize]

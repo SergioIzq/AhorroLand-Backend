@@ -50,7 +50,7 @@ public class GastosController : AbsController
         };
 
         var result = await _sender.Send(query);
-        return HandlePagedResult(result); // 🆕 Usando HandlePagedResult
+        return HandleResult(result); // 🆕 Usando HandleResult
     }
 
     [Authorize]

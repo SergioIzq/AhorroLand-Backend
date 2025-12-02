@@ -22,10 +22,11 @@ public abstract class AbsWriteRepository<T, TId> : IWriteRepository<T, TId>
     /// </summary>
     public virtual async Task<T?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
     {
-        // Buscar la entidad con tracking habilitado para que los cambios se detecten
+        var idValueObject = (TId)Activator.CreateInstance(typeof(TId), id)!;
+
         return await _context.Set<T>()
             .AsTracking()
-            .FirstOrDefaultAsync(e => e.Id.Value == id, cancellationToken);
+            .FirstOrDefaultAsync(e => e.Id.Equals(idValueObject), cancellationToken);
     }
 
     public virtual void Add(T entity)
@@ -43,23 +44,6 @@ public abstract class AbsWriteRepository<T, TId> : IWriteRepository<T, TId>
     /// </summary>
     public virtual void Update(T entity)
     {
-        _context.Set<T>().Update(entity);
-    }
-
-    /// <summary>
-    /// Actualiza una entidad de forma asíncrona verificando primero que existe en la base de datos.
-    /// </summary>
-    public virtual async Task UpdateAsync(T entity, CancellationToken cancellationToken = default)
-    {
-        // Verificar si la entidad existe en la base de datos
-        var exists = await _context.Set<T>().AnyAsync(e => e.Id.Value == entity.Id.Value, cancellationToken);
-
-        if (!exists)
-        {
-            throw new InvalidOperationException(
-                $"No se puede actualizar la entidad {typeof(T).Name} con Id '{entity.Id.Value}' porque no existe en la base de datos.");
-        }
-
         _context.Set<T>().Update(entity);
     }
 

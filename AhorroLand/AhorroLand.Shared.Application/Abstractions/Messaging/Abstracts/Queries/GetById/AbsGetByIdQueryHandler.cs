@@ -1,4 +1,5 @@
-﻿using AhorroLand.Shared.Application.Abstractions.Servicies;
+﻿using AhorroLand.Shared.Application.Abstractions.Messaging.Abstracts.Queries;
+using AhorroLand.Shared.Application.Abstractions.Servicies;
 using AhorroLand.Shared.Domain.Abstractions;
 using AhorroLand.Shared.Domain.Abstractions.Results;
 using AhorroLand.Shared.Domain.Interfaces;
@@ -9,23 +10,22 @@ namespace AhorroLand.Shared.Application.Abstractions.Messaging.Abstracts.Queries
 
 /// <summary>
 /// Handler base para consultas GetById.
-/// ✅ OPTIMIZADO: Usa IReadRepositoryWithDto para obtener DTOs directamente desde SQL.
+/// Implementa el patrón "Cache-Aside": Primero busca en caché, luego en BD.
 /// </summary>
 public abstract class GetByIdQueryHandler<TEntity, TId, TDto, TQuery>
- : AbsQueryHandler<TEntity, TId>, IRequestHandler<TQuery, Result<TDto>>
+    : AbsQueryHandler<TEntity, TId>, IRequestHandler<TQuery, Result<TDto>>
     where TEntity : AbsEntity<TId>
     where TDto : class
     where TQuery : AbsGetByIdQuery<TEntity, TId, TDto>
     where TId : IGuidValueObject
 {
-    // 🔥 ÚNICO REPOSITORIO: Solo usamos IReadRepositoryWithDto
+    // Solo usamos el repo de lectura optimizado (Dapper/SQL directo)
     protected readonly IReadRepositoryWithDto<TEntity, TDto, TId> _dtoRepository;
 
-    // 🔥 Constructor simplificado
-    public GetByIdQueryHandler(
-     IReadRepositoryWithDto<TEntity, TDto, TId> dtoRepository,
+    protected GetByIdQueryHandler(
+        IReadRepositoryWithDto<TEntity, TDto, TId> dtoRepository,
         ICacheService cacheService)
-   : base(cacheService)
+        : base(cacheService)
     {
         _dtoRepository = dtoRepository;
     }
@@ -41,18 +41,23 @@ public abstract class GetByIdQueryHandler<TEntity, TId, TDto, TQuery>
             return Result.Success(cachedDto);
         }
 
-        // 2. 🚀 OPTIMIZADO: Obtener DTO directamente desde SQL sin mapeo
+        // 2. Si no está en caché, ir a la Base de Datos
+        // NOTA: Si la BD explota (TimeOut, Conexión), el Middleware Global lo atrapa (500).
         var dto = await _dtoRepository.GetReadModelByIdAsync(query.Id, cancellationToken);
 
+        // 3. Verificación de existencia (Regla de Negocio de Lectura)
         if (dto is null)
         {
-            return Result.Failure<TDto>(Error.NotFound(
-           $"Entidad con ID '{query.Id}' de tipo {typeof(TEntity).Name} no fue encontrada."));
+            // Usamos tu nuevo Error.NotFound que ya tiene ErrorType.NotFound integrado.
+            // Esto hará que el Controller devuelva automáticamente un 404.
+            return Result.Failure<TDto>(
+                Error.NotFound($"No se encontró el registro de {typeof(TEntity).Name} con ID '{query.Id}'.")
+            );
         }
 
-        // 3. Cachear el DTO
+        // 4. Guardar en caché (Cache-Aside pattern)
         await _cacheService.SetAsync(
-      cacheKey,
+            cacheKey,
             dto,
             absoluteExpiration: TimeSpan.FromMinutes(30)
         );

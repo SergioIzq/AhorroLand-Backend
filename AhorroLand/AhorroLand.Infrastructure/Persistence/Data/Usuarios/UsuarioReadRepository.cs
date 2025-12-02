@@ -18,7 +18,7 @@ public sealed class UsuarioReadRepository : AbsReadRepository<Usuario, UsuarioDt
     public async Task<Usuario?> GetByEmailAsync(Email correo, CancellationToken cancellationToken = default)
     {
         const string sql = @"
-            SELECT id, correo, contrasena as Contrasena, token_confirmacion as TokenConfirmacion, activo
+            SELECT id, correo, contrasena as Contrasena, token_confirmacion as TokenConfirmacion, activo, token_recuperacion as TokenRecuperacion, token_recuperacion_expiracion as TokenExpiracion
              FROM usuarios
             WHERE correo = @Correo
             LIMIT 1";
@@ -49,12 +49,20 @@ public sealed class UsuarioReadRepository : AbsReadRepository<Usuario, UsuarioDt
         var constructor = typeof(Usuario).GetConstructor(
           System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance,
                     null,
-                    new[] { typeof(UsuarioId), typeof(Email), typeof(PasswordHash), typeof(ConfirmationToken?), typeof(bool) },
+                    new[] { typeof(UsuarioId), typeof(Email), typeof(PasswordHash), typeof(ConfirmationToken?), typeof(bool), typeof(ConfirmationToken?), typeof(DateTime?) },
             null);
 
-        var usuarioId = new UsuarioId(dto.Id); // <--- AQUÍ ESTABA EL ERROR
+        var usuarioId = new UsuarioId(dto.Id);
         var email = new Email(dto.Correo);
         var passwordHash = new PasswordHash(dto.Contrasena);
+        ConfirmationToken? tokenRecuperacion = null;
+        DateTime? tokenRecuperacionExpiracion = null;
+
+        if(dto.TokenExpiracion is not null && dto.TokenRecuperacion is not null)
+        {
+            tokenRecuperacion = new ConfirmationToken(dto.TokenRecuperacion);
+            tokenRecuperacionExpiracion = dto.TokenExpiracion.Value;
+        }
 
         // Asumiendo que ConfirmationToken es un struct o class con constructor que recibe string
         ConfirmationToken? token = dto.TokenConfirmacion != null
@@ -63,11 +71,13 @@ public sealed class UsuarioReadRepository : AbsReadRepository<Usuario, UsuarioDt
 
         // 2. Pasar los objetos tipados al constructor
         return (Usuario)constructor!.Invoke([
-            usuarioId,    // Ahora pasas un UsuarioId, no un Guid
+            usuarioId,
             email,
             passwordHash,
             token,
-            dto.Activo
+            dto.Activo,
+            tokenRecuperacion,
+            tokenRecuperacionExpiracion
         ]);
     }
 
@@ -77,6 +87,8 @@ public sealed class UsuarioReadRepository : AbsReadRepository<Usuario, UsuarioDt
         public string Correo { get; set; } = string.Empty;
         public string Contrasena { get; set; } = string.Empty;
         public string? TokenConfirmacion { get; set; }
+        public string? TokenRecuperacion { get; set; }
+        public DateTime? TokenExpiracion { get; set; }
         public bool Activo { get; set; }
     }
 }

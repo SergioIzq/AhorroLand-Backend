@@ -1,6 +1,6 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿using AhorroLand.Shared.Domain.Abstractions.Results;
+using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
-using System.Diagnostics;
 using System.Text.Json;
 
 namespace AhorroLand.Middleware;
@@ -17,7 +17,6 @@ public sealed class ResultHandlerMiddleware
         WriteIndented = false
     };
 
-    // Opciones para lectura: Permite comentarios y comas al final para ser más tolerante
     private static readonly JsonDocumentOptions DocumentOptions = new()
     {
         AllowTrailingCommas = true,
@@ -41,41 +40,48 @@ public sealed class ResultHandlerMiddleware
         {
             await _next(context);
 
-            // 1. Validaciones previas para no procesar innecesariamente
-            if (context.Response.StatusCode == StatusCodes.Status200OK &&
-                HasJsonContentType(context) &&
-                !IsCompressed(context)) // IMPORTANTE: No leer si está comprimido
+            // 1. Interceptamos SOLO si es JSON y no está comprimido
+            if (HasJsonContentType(context) && !IsCompressed(context))
             {
                 responseBody.Seek(0, SeekOrigin.Begin);
 
-                // 2. OPTIMIZACIÓN: Obtener los bytes directamente sin convertir a String
-                // Esto evita el error del BOM (0xEF) y ahorra memoria.
+                // Leemos el buffer sin convertir a string para alto rendimiento
                 if (responseBody.TryGetBuffer(out ArraySegment<byte> buffer) && buffer.Count > 0)
                 {
-                    if (TryDetectResultError(buffer, out var errorResponse, out var statusCode))
+                    // 2. Analizamos si el cuerpo es un Result Fallido
+                    if (TryDetectFailureInBody(buffer, out var error, out var suggestedStatusCode))
                     {
+                        // 3. LOGGING: Registramos el error de negocio detectado
                         _logger.LogInformation(
-                            "Result con error detectado: {ErrorCode} - Status: {StatusCode} - Path: {Path}",
-                            errorResponse!.Code, statusCode, context.Request.Path);
+                            "Result Fallido detectado en middleware: {Code} - {Name} | Sugerido: {Status} | Actual: {CurrentStatus}",
+                            error!.Code, error.Name, suggestedStatusCode, context.Response.StatusCode);
 
-                        await WriteErrorResponseAsync(context, originalBodyStream, errorResponse, statusCode);
-                        return;
+                        // 4. CORRECCIÓN AUTOMÁTICA (Soft 200 check)
+                        // Si el controlador devolvió 200 OK pero el contenido es un Error, lo corregimos.
+                        if (context.Response.StatusCode == StatusCodes.Status200OK && suggestedStatusCode != StatusCodes.Status200OK)
+                        {
+                            _logger.LogWarning("Corrigiendo respuesta HTTP 200 OK a {StatusCode} porque el Result contiene errores.", suggestedStatusCode);
+
+                            // Reescribimos la respuesta asegurando el formato Result correcto
+                            await WriteErrorResponseAsync(context, originalBodyStream, error, suggestedStatusCode);
+                            return;
+                        }
                     }
                 }
             }
 
-            // Si no hay error o no es procesable, devolver la respuesta original
+            // Si no hubo nada que corregir, devolvemos la respuesta original tal cual
             responseBody.Seek(0, SeekOrigin.Begin);
             await responseBody.CopyToAsync(originalBodyStream);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error crítico en ResultHandlerMiddleware. Path: {Path}", context.Request.Path);
+            _logger.LogError(ex, "Error crítico en ResultHandlerMiddleware procesando la respuesta.");
 
-            // Recuperación ante fallos: Devolver lo que haya en el buffer original
+            // Si ocurre un error aquí, devolvemos lo que teníamos en el buffer original para no romper la respuesta
+            // (El GlobalExceptionHandler que está más arriba en la pila capturará la excepción si la relanzamos)
             responseBody.Seek(0, SeekOrigin.Begin);
             await responseBody.CopyToAsync(originalBodyStream);
-
             throw;
         }
         finally
@@ -92,120 +98,141 @@ public sealed class ResultHandlerMiddleware
 
     private static bool IsCompressed(HttpContext context)
     {
-        // Si hay Content-Encoding (gzip, br, etc.), el body es binario, no texto.
         return context.Response.Headers.ContainsKey("Content-Encoding");
     }
 
     /// <summary>
-    /// Detecta error parseando directamente los BYTES (ReadOnlyMemory)
+    /// Analiza los bytes del body para ver si es un JSON con estructura { "isSuccess": false, "error": { ... } }
     /// </summary>
-    private bool TryDetectResultError(ReadOnlyMemory<byte> jsonBytes, out ErrorResponse? errorResponse, out int statusCode)
+    private bool TryDetectFailureInBody(ReadOnlyMemory<byte> jsonBytes, out Error? error, out int suggestedStatusCode)
     {
-        errorResponse = null;
-        statusCode = StatusCodes.Status500InternalServerError;
+        error = null;
+        suggestedStatusCode = StatusCodes.Status200OK;
 
         try
         {
-            // JsonDocument.Parse maneja automáticamente el BOM UTF-8 (0xEF, 0xBB, 0xBF)
-            // cuando trabaja con bytes.
             using var doc = JsonDocument.Parse(jsonBytes, DocumentOptions);
             var root = doc.RootElement;
 
-            // Verificar si es un objeto JSON (si es array [], no es un Result)
             if (root.ValueKind != JsonValueKind.Object) return false;
 
-            // Verificar propiedades (Case Insensitive implícito chequeando ambas)
-            if (!root.TryGetProperty("isSuccess", out var isSuccessElement) &&
-                !root.TryGetProperty("IsSuccess", out isSuccessElement))
+            // 1. Verificar "isSuccess"
+            // Buscamos camelCase y PascalCase por compatibilidad
+            if (!TryGetBooleanProperty(root, "isSuccess", out var isSuccess))
             {
+                // Si no tiene propiedad isSuccess, no es un Result, ignoramos.
                 return false;
             }
 
-            if (isSuccessElement.GetBoolean())
+            if (isSuccess) return false; // Es un éxito, no hay nada que hacer.
+
+            // 2. Es un fallo: Extraer el objeto "error"
+            if (!TryGetProperty(root, "error", out var errorElement))
             {
-                return false; // Es Success = true, no hacemos nada
+                return false; // Dice false pero no tiene error, estructura inválida.
             }
 
-            // Extraer el error
-            if (!root.TryGetProperty("error", out var errorElement) &&
-                !root.TryGetProperty("Error", out errorElement))
-            {
-                return false;
-            }
-
-            // Parsear propiedades del error con seguridad null
+            // 3. Extraer detalles del error
             var code = GetStringProperty(errorElement, "code") ?? "Error.Unknown";
             var name = GetStringProperty(errorElement, "name") ?? "Error";
-            var message = GetStringProperty(errorElement, "message") ?? "Ocurrió un error";
+            var message = GetStringProperty(errorElement, "message") ?? "Ocurrió un error no especificado";
 
-            statusCode = MapErrorCodeToHttpStatus(code);
-            errorResponse = new ErrorResponse(code, name, message, Activity.Current?.Id);
+            // Reconstruimos el objeto Error de dominio
+            error = new Error(code, name, message);
+
+            // Calculamos qué status code debería tener
+            suggestedStatusCode = MapErrorCodeToHttpStatus(code);
 
             return true;
         }
-        catch (JsonException)
+        catch (Exception)
         {
-            // Es común que falle si el body no es el JSON que esperamos. 
-            // No logueamos error aquí para no ensuciar logs, simplemente retornamos false.
+            // Si falla el parseo, asumimos que no es un Result nuestro y dejamos pasar.
             return false;
         }
-        catch (Exception ex)
+    }
+
+    private static async Task WriteErrorResponseAsync(HttpContext context, Stream outputStream, Error error, int statusCode)
+    {
+        context.Response.StatusCode = statusCode;
+        context.Response.ContentType = "application/json";
+        context.Response.Headers.ContentLength = null; // El tamaño va a cambiar
+
+        // 🔥 CLAVE: Usamos Result.Failure para mantener la consistencia con el GlobalExceptionHandler
+        var result = Result.Failure(error);
+
+        await JsonSerializer.SerializeAsync(outputStream, result, JsonOptions);
+    }
+
+    // --- Helpers de Parseo JSON Robustos ---
+
+    private static bool TryGetBooleanProperty(JsonElement element, string propertyName, out bool value)
+    {
+        value = false;
+        if (element.TryGetProperty(propertyName, out var prop) ||
+            element.TryGetProperty(ToPascalCase(propertyName), out prop))
         {
-            _logger.LogWarning(ex, "Error inesperado leyendo estructura Result.");
-            return false;
+            if (prop.ValueKind == JsonValueKind.True || prop.ValueKind == JsonValueKind.False)
+            {
+                value = prop.GetBoolean();
+                return true;
+            }
         }
+        return false;
+    }
+
+    private static bool TryGetProperty(JsonElement element, string propertyName, out JsonElement value)
+    {
+        if (element.TryGetProperty(propertyName, out value)) return true;
+        if (element.TryGetProperty(ToPascalCase(propertyName), out value)) return true;
+
+        value = default;
+        return false;
     }
 
     private static string? GetStringProperty(JsonElement element, string propertyName)
     {
-        // Validación de seguridad por si acaso
-        if (string.IsNullOrEmpty(propertyName)) return null;
-
-        // Intenta obtener la propiedad tal cual ("code")
-        if (element.TryGetProperty(propertyName, out var prop))
+        if (TryGetProperty(element, propertyName, out var prop) && prop.ValueKind == JsonValueKind.String)
         {
             return prop.GetString();
         }
-
-        // Intenta obtener la propiedad en PascalCase ("Code")
-        // ✅ CORRECTO: propertyName[1..] toma desde el 1 hasta el final automáticamente
-        var pascalCaseName = char.ToUpper(propertyName[0]) + propertyName[1..];
-
-        if (element.TryGetProperty(pascalCaseName, out prop))
-        {
-            return prop.GetString();
-        }
-
         return null;
     }
 
+    private static string ToPascalCase(string str) =>
+        string.IsNullOrEmpty(str) ? str : char.ToUpper(str[0]) + str[1..];
+
+    /// <summary>
+    /// Mapeo heurístico basado en strings por si no tenemos el Enum disponible en el JSON crudo.
+    /// Intenta coincidir con la lógica del AbsController.
+    /// </summary>
     private static int MapErrorCodeToHttpStatus(string errorCode)
     {
         return errorCode switch
         {
-            var c when c.Contains("Validation", StringComparison.OrdinalIgnoreCase) => StatusCodes.Status400BadRequest,
-            var c when c.Contains("NotFound", StringComparison.OrdinalIgnoreCase) => StatusCodes.Status404NotFound,
-            var c when c.Contains("Conflict", StringComparison.OrdinalIgnoreCase) => StatusCodes.Status409Conflict,
-            var c when c.Contains("AlreadyExists", StringComparison.OrdinalIgnoreCase) => StatusCodes.Status409Conflict,
-            var c when c.Contains("Unauthorized", StringComparison.OrdinalIgnoreCase) => StatusCodes.Status401Unauthorized,
-            var c when c.Contains("Authentication", StringComparison.OrdinalIgnoreCase) => StatusCodes.Status401Unauthorized,
-            var c when c.Contains("Forbidden", StringComparison.OrdinalIgnoreCase) => StatusCodes.Status403Forbidden,
-            var c when c.Contains("Authorization", StringComparison.OrdinalIgnoreCase) => StatusCodes.Status403Forbidden,
-            var c when c.Contains("UpdateFailure", StringComparison.OrdinalIgnoreCase) => StatusCodes.Status422UnprocessableEntity,
-            var c when c.Contains("DeleteFailure", StringComparison.OrdinalIgnoreCase) => StatusCodes.Status422UnprocessableEntity,
+            // 400 Bad Request (Validación)
+            var c when Contains(c, "Validation") || Contains(c, "NullValue") || Contains(c, "InvalidFormat") => StatusCodes.Status400BadRequest,
+
+            // 404 Not Found
+            var c when Contains(c, "NotFound") => StatusCodes.Status404NotFound,
+
+            // 409 Conflict (Duplicados, Reglas de negocio)
+            var c when Contains(c, "Conflict") || Contains(c, "Duplicate") || Contains(c, "AlreadyExists") => StatusCodes.Status409Conflict,
+
+            // 401 Unauthorized (Login fallido, Token inválido)
+            var c when Contains(c, "Unauthorized") || Contains(c, "InvalidCredentials") || Contains(c, "TokenExpired") => StatusCodes.Status401Unauthorized,
+
+            // 403 Forbidden (Permisos)
+            var c when Contains(c, "Forbidden") || Contains(c, "AccessDenied") => StatusCodes.Status403Forbidden,
+
+            // 503 Service Unavailable
+            var c when Contains(c, "Unavailable") || Contains(c, "ConnectionError") => StatusCodes.Status503ServiceUnavailable,
+
+            // Default 500
             _ => StatusCodes.Status500InternalServerError
         };
     }
 
-    private static async Task WriteErrorResponseAsync(HttpContext context, Stream outputStream, ErrorResponse errorResponse, int statusCode)
-    {
-        // Importante: No podemos escribir cabeceras si ya empezaron a enviarse (aunque con MemoryStream intermedio es seguro)
-        context.Response.StatusCode = statusCode;
-        context.Response.ContentType = "application/json";
-
-        // Removemos content-length anterior si existía porque el tamaño cambia
-        context.Response.Headers.ContentLength = null;
-
-        await JsonSerializer.SerializeAsync(outputStream, errorResponse, JsonOptions);
-    }
+    private static bool Contains(string source, string toCheck) =>
+        source.Contains(toCheck, StringComparison.OrdinalIgnoreCase);
 }

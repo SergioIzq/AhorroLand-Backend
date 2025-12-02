@@ -95,32 +95,32 @@ namespace AhorroLand.Infrastructure.Persistence.Command.Configurations.Configura
             // Relaciones usando SOLO el nombre de columna
             builder.HasOne(e => e.Concepto)
                 .WithMany()
-                .HasForeignKey("id_concepto")
+                .HasForeignKey(e => e.ConceptoId) // <--- CAMBIO: Usa la propiedad tipada
                 .OnDelete(DeleteBehavior.Restrict);
 
             builder.HasOne(e => e.Proveedor)
                 .WithMany()
-                .HasForeignKey("id_proveedor")
+                .HasForeignKey(e => e.ProveedorId) // <--- CAMBIO
                 .OnDelete(DeleteBehavior.Restrict);
 
             builder.HasOne(e => e.Persona)
                 .WithMany()
-                .HasForeignKey("id_persona")
+                .HasForeignKey(e => e.PersonaId)   // <--- CAMBIO
                 .OnDelete(DeleteBehavior.Restrict);
 
             builder.HasOne(e => e.Cuenta)
                 .WithMany()
-                .HasForeignKey("id_cuenta")
+                .HasForeignKey(e => e.CuentaId)    // <--- CAMBIO
                 .OnDelete(DeleteBehavior.Restrict);
 
             builder.HasOne(e => e.FormaPago)
                 .WithMany()
-                .HasForeignKey("id_forma_pago")
+                .HasForeignKey(e => e.FormaPagoId) // <--- CAMBIO
                 .OnDelete(DeleteBehavior.Restrict);
 
             builder.HasOne(e => e.Usuario)
                 .WithMany()
-                .HasForeignKey("id_usuario")
+                .HasForeignKey(e => e.UsuarioId)   // <--- CAMBIO
                 .OnDelete(DeleteBehavior.Restrict);
 
             // Índices críticos para rendimiento

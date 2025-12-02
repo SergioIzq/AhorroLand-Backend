@@ -24,7 +24,7 @@ public class CategoriasController : AbsController
     {
         var query = new GetCategoriasPagedListQuery(page, pageSize);
         var result = await _sender.Send(query);
-        return HandlePagedResult(result); // 🆕 Usando HandlePagedResult
+        return HandleResult(result); // 🆕 Usando HandleResult
     }
 
     /// <summary>
@@ -49,7 +49,7 @@ public class CategoriasController : AbsController
         };
 
         var result = await _sender.Send(query);
-        return HandleListResult(result); // 🆕 Usando HandleListResult
+        return HandleResult(result); // 🆕 Usando HandleResult
     }
 
     /// <summary>
@@ -74,7 +74,7 @@ public class CategoriasController : AbsController
         };
 
         var result = await _sender.Send(query);
-        return HandleListResult(result); // 🆕 Usando HandleListResult
+        return HandleResult(result); // 🆕 Usando HandleResult
     }
 
     [Authorize]

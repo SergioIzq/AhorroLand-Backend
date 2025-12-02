@@ -24,7 +24,7 @@ public class PersonasController : AbsController
     {
         var query = new GetPersonasPagedListQuery(page, pageSize);
         var result = await _sender.Send(query);
-        return HandlePagedResult(result); // 🆕
+        return HandleResult(result); // 🆕
     }
 
     /// <summary>
@@ -49,7 +49,7 @@ public class PersonasController : AbsController
         };
 
         var result = await _sender.Send(query);
-        return HandleListResult(result); // 🆕
+        return HandleResult(result); // 🆕
     }
 
     /// <summary>
@@ -74,7 +74,7 @@ public class PersonasController : AbsController
         };
 
         var result = await _sender.Send(query);
-        return HandleListResult(result); // 🆕
+        return HandleResult(result); // 🆕
     }
 
     [HttpGet("{id}")]

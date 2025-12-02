@@ -1,36 +1,34 @@
 ﻿namespace AhorroLand.Shared.Domain.Abstractions.Results;
 
-public record Error(string Code, string Name, string? Message = null)
+using AhorroLand.Shared.Domain.Abstractions.Enums;
+
+public record Error(string Code, string Name, string Message, ErrorType Type)
 {
-    // --- Errores Base ---
-    public static readonly Error None = new(string.Empty, string.Empty);
-    public static readonly Error NullValue = new("Error.NullValue", "Un valor null fue ingresado");
+    // Un error vacío es de tipo Failure por defecto
+    public static readonly Error None = new(string.Empty, string.Empty, string.Empty, ErrorType.Failure);
 
-    // --- Métodos de Error Parametrizables ---
+    public static readonly Error NullValue = new("Error.NullValue", "Un valor null fue ingresado", "El valor no puede ser nulo", ErrorType.Validation);
 
-    // 1. NOT FOUND (Devuelve 404)
-    // El 'detail' por defecto es coherente y se puede sobrescribir con el ID no encontrado.
+    // --- Métodos Parametrizables (Actualizados) ---
+
     public static Error NotFound(string detail = "El recurso solicitado no fue encontrado.") =>
-        new("Error.NotFound", "Recurso no encontrado", detail);
+        new("Error.NotFound", "Recurso no encontrado", detail, ErrorType.NotFound);
 
-    // 2. CONFLICT (Devuelve 409)
-    // Mensaje coherente para un conflicto (violación de unicidad).
     public static Error Conflict(string detail = "Ya existe un recurso con una o más propiedades únicas.") =>
-        new("Error.Conflict", "Conflicto de recurso", detail);
+        new("Error.Conflict", "Conflicto de recurso", detail, ErrorType.Conflict);
 
-    // 3. UPDATE FAILURE
-    public static Error UpdateFailure(string detail = "Falló la actualización del recurso. Posible conflicto de concurrencia.") =>
-        new("Error.UpdateFailure", "Fallo de actualización", detail);
-
-    // 4. DELETE FAILURE
-    public static Error DeleteFailure(string detail = "Falló la eliminación del recurso. Posible dependencia activa (foreign key).") =>
-        new("Error.DeleteFailure", "Fallo de eliminación", detail);
-
-    // 5. VALIDATION (Devuelve 400)
     public static Error Validation(string detail = "Uno o más campos de entrada son inválidos.") =>
-        new("Error.Validation", "Error de validación", detail);
+        new("Error.Validation", "Error de validación", detail, ErrorType.Validation);
 
-    // 6. FALLO GENÉRICO (Para excepciones no controladas)
+    public static Error Unauthorized(string detail = "Credenciales inválidas.") =>
+        new("Error.Unauthorized", "No autorizado", detail, ErrorType.Unauthorized);
+
+    public static Error Forbidden(string detail = "No tienes permisos.") =>
+        new("Error.Forbidden", "Acceso denegado", detail, ErrorType.Forbidden);
+
     public static Error Failure(string code, string name, string message) =>
-        new(code, name, message);
+        new(code, name, message, ErrorType.Failure);
+
+    // 🔥 Constructor auxiliar para cuando creas errores custom sin pasar el enum explícitamente (fallback a Failure)
+    public Error(string Code, string Name, string Message) : this(Code, Name, Message, ErrorType.Failure) { }
 }

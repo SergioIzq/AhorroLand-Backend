@@ -20,9 +20,9 @@ namespace AhorroLand.Infrastructure.Persistence.Data.Proveedores
         public override async Task CreateAsync(Proveedor entity, CancellationToken cancellationToken = default)
         {
             var exists = await _readRepository.ExistsWithSameNameAsync(
-      entity.Nombre,
-    entity.UsuarioId,
-     cancellationToken);
+                          entity.Nombre,
+                        entity.UsuarioId,
+                         cancellationToken);
 
             if (exists)
             {
@@ -33,21 +33,14 @@ namespace AhorroLand.Infrastructure.Persistence.Data.Proveedores
             await base.CreateAsync(entity, cancellationToken);
         }
 
-        public override void Update(Proveedor entity)
+        public async override void Update(Proveedor entity)
         {
-            throw new NotSupportedException(
-             "Use UpdateAsync para actualizar proveedores con validación de duplicados.");
-        }
-
-        public override async Task UpdateAsync(Proveedor entity, CancellationToken cancellationToken = default)
-        {
-            await base.UpdateAsync(entity, cancellationToken);
+            base.Update(entity);
 
             var exists = await _readRepository.ExistsWithSameNameExceptAsync(
-        entity.Nombre,
-      entity.UsuarioId,
-        entity.Id.Value,
-            cancellationToken);
+                        entity.Nombre,
+                      entity.UsuarioId,
+                        entity.Id.Value);
 
             if (exists)
             {

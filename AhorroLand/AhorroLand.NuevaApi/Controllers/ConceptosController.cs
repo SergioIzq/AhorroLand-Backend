@@ -25,7 +25,7 @@ public class ConceptosController : AbsController
     {
         var query = new GetConceptosPagedListQuery(page, pageSize);
         var result = await _sender.Send(query);
-    return HandlePagedResult(result); // 🆕
+        return HandleResult(result); // 🆕
     }
 
     /// <summary>
@@ -43,9 +43,9 @@ public class ConceptosController : AbsController
   ?? User.FindFirst("sub")?.Value
           ?? User.FindFirst("userId")?.Value;
 
-      if (string.IsNullOrEmpty(userIdClaim) || !Guid.TryParse(userIdClaim, out var usuarioId))
+        if (string.IsNullOrEmpty(userIdClaim) || !Guid.TryParse(userIdClaim, out var usuarioId))
         {
-   return Unauthorized(new { message = "Usuario no autenticado o token inválido" });
+            return Unauthorized(new { message = "Usuario no autenticado o token inválido" });
         }
 
         var query = new SearchConceptosQuery(search, limit)
@@ -54,7 +54,7 @@ public class ConceptosController : AbsController
         };
 
         var result = await _sender.Send(query);
-        return HandleListResult(result); // 🆕
+        return HandleResult(result); // 🆕
     }
 
     /// <summary>
@@ -63,23 +63,23 @@ public class ConceptosController : AbsController
     [Authorize]
     [HttpGet("recent")]
     public async Task<IActionResult> GetRecent([FromQuery] int limit = 5)
- {
+    {
         var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value
     ?? User.FindFirst("sub")?.Value
    ?? User.FindFirst("userId")?.Value;
 
         if (string.IsNullOrEmpty(userIdClaim) || !Guid.TryParse(userIdClaim, out var usuarioId))
         {
-        return Unauthorized(new { message = "Usuario no autenticado o token inválido" });
+            return Unauthorized(new { message = "Usuario no autenticado o token inválido" });
         }
 
         var query = new GetRecentConceptosQuery(limit)
         {
-  UsuarioId = usuarioId
-    };
+            UsuarioId = usuarioId
+        };
 
         var result = await _sender.Send(query);
-   return HandleListResult(result); // 🆕
+        return HandleResult(result); // 🆕
     }
 
     [Authorize]
@@ -88,27 +88,27 @@ public class ConceptosController : AbsController
     {
         var query = new GetConceptoByIdQuery(id);
         var result = await _sender.Send(query);
-    return HandleResult(result);
-}
+        return HandleResult(result);
+    }
 
     [Authorize]
-  [HttpPost]
+    [HttpPost]
     public async Task<IActionResult> Create([FromBody] CreateConceptoRequest request)
     {
-    var command = new CreateConceptoCommand
+        var command = new CreateConceptoCommand
         {
-     Nombre = request.Nombre,
+            Nombre = request.Nombre,
             CategoriaId = request.CategoriaId,
-     UsuarioId = request.UsuarioId
-    };
+            UsuarioId = request.UsuarioId
+        };
 
         var result = await _sender.Send(command);
 
-     return HandleResultForCreation(
-     result,
-    nameof(GetById),
-            new { id = result.Value }
-        );
+        return HandleResultForCreation(
+        result,
+       nameof(GetById),
+               new { id = result.Value }
+           );
     }
 
     [Authorize]
@@ -118,8 +118,8 @@ public class ConceptosController : AbsController
         var command = new UpdateConceptoCommand
         {
             Id = id,
-          Nombre = request.Nombre,
-     CategoriaId = request.CategoriaId
+            Nombre = request.Nombre,
+            CategoriaId = request.CategoriaId
         };
 
         var result = await _sender.Send(command);
@@ -129,9 +129,9 @@ public class ConceptosController : AbsController
     [Authorize]
     [HttpDelete("{id}")]
     public async Task<IActionResult> Delete(Guid id)
- {
-     var command = new DeleteConceptoCommand(id);
-  var result = await _sender.Send(command);
+    {
+        var command = new DeleteConceptoCommand(id);
+        var result = await _sender.Send(command);
         return HandleResult(result);
     }
 }

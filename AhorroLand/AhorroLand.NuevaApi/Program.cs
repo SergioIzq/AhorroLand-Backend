@@ -3,7 +3,6 @@ using AhorroLand.Infrastructure;
 using AhorroLand.Infrastructure.Configuration;
 using AhorroLand.Infrastructure.TypesHandlers;
 using AhorroLand.Middleware;
-using AhorroLand.Middleware.Filters;
 using AhorroLand.Shared.Application;
 using Dapper;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -92,12 +91,7 @@ try
            .SetVaryByQuery("page", "pageSize"));
     });
 
-    builder.Services.AddControllers(options =>
-    {
-
-        options.Filters.Add<ResultMappingFilter>();
-    }
-    )
+    builder.Services.AddControllers()
     .AddJsonOptions(options =>
     {
         // 🔥 Configuración JSON FLEXIBLE para recibir cualquier formato

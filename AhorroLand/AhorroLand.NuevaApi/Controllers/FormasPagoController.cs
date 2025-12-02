@@ -25,7 +25,7 @@ public class FormasPagoController : AbsController
     {
         var query = new GetFormasPagoPagedListQuery(page, pageSize);
         var result = await _sender.Send(query);
-   return HandlePagedResult(result); // ??
+   return HandleResult(result); // ??
     }
 
     /// <summary>
@@ -50,7 +50,7 @@ var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value
         };
 
   var result = await _sender.Send(query);
-        return HandleListResult(result); // ??
+        return HandleResult(result); // ??
     }
 
     /// <summary>
@@ -75,7 +75,7 @@ public async Task<IActionResult> GetRecent([FromQuery] int limit = 5)
         };
 
   var result = await _sender.Send(query);
-        return HandleListResult(result); // ??
+        return HandleResult(result); // ??
     }
 
     [Authorize]

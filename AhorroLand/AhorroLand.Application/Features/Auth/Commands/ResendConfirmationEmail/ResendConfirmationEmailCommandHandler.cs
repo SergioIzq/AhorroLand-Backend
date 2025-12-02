@@ -3,6 +3,7 @@ using AhorroLand.Shared.Application.Abstractions.Messaging;
 using AhorroLand.Shared.Application.Abstractions.Services;
 using AhorroLand.Shared.Application.Dtos;
 using AhorroLand.Shared.Application.Interfaces;
+using AhorroLand.Shared.Domain.Abstractions.Errors;
 using AhorroLand.Shared.Domain.Abstractions.Results;
 using AhorroLand.Shared.Domain.Interfaces;
 using AhorroLand.Shared.Domain.ValueObjects;
@@ -43,7 +44,7 @@ public sealed class ResendConfirmationEmailCommandHandler : ICommandHandler<Rese
 
         if (user.Activo)
         {
-            return Result.Failure(new Error("Auth.AlreadyConfirmed", "Esta cuenta ya está confirmada. Inicia sesión."));
+            return Result.Failure(AuthErrors.AlreadyConfirmed);
         }
 
         // 3. Generar NUEVO token (invalida el anterior)
@@ -52,7 +53,7 @@ public sealed class ResendConfirmationEmailCommandHandler : ICommandHandler<Rese
         // Asumiendo que tienes un método para actualizar esto en tu dominio
         user.SetTokenConfirmacion(newToken);
 
-        await _usuarioWriteRepository.UpdateAsync(user, cancellationToken);
+        _usuarioWriteRepository.Update(user);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
 

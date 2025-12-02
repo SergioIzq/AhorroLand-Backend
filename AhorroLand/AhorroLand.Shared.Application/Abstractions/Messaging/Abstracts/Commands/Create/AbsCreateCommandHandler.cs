@@ -3,26 +3,21 @@ using AhorroLand.Shared.Domain.Abstractions;
 using AhorroLand.Shared.Domain.Abstractions.Results;
 using AhorroLand.Shared.Domain.Interfaces;
 using AhorroLand.Shared.Domain.Interfaces.Repositories;
-using Mapster;
 using MediatR;
 
 namespace AhorroLand.Shared.Application.Abstractions.Messaging.Abstracts.Commands;
 
 /// <summary>
 /// Handler genérico para crear entidades. 
-/// Realiza persistencia, invalidación de caché y mapeo de respuesta.
+/// Maneja la creación del objeto de dominio, persistencia y retorno del ID.
 /// </summary>
-/// <typeparam name="TEntity">La Entidad de Dominio.</typeparam>
-/// <typeparam name="TDto">El DTO de respuesta.</typeparam>
-/// <typeparam name="TCommand">El tipo de comando concreto que hereda de AbsCreateTCommand.</typeparam>
 public abstract class AbsCreateCommandHandler<TEntity, TId, TCommand>
-// Heredamos funcionalidad de persistencia y caché
     : AbsCommandHandler<TEntity, TId>, IRequestHandler<TCommand, Result<Guid>>
     where TEntity : AbsEntity<TId>
     where TCommand : AbsCreateCommand<TEntity, TId>
     where TId : IGuidValueObject
 {
-    public AbsCreateCommandHandler(
+    protected AbsCreateCommandHandler(
         IUnitOfWork unitOfWork,
         IWriteRepository<TEntity, TId> writeRepository,
         ICacheService cacheService)
@@ -31,37 +26,33 @@ public abstract class AbsCreateCommandHandler<TEntity, TId, TCommand>
     }
 
     /// <summary>
-    /// Método abstracto que debe ser implementado por el Handler concreto.
-    /// Aquí se contiene la lógica de negocio para crear la entidad a partir del DTO.
+    /// Método abstracto: El hijo debe saber cómo instanciar la entidad (new TEntity(...))
     /// </summary>
     protected abstract TEntity CreateEntity(TCommand command);
 
     public virtual async Task<Result<Guid>> Handle(TCommand command, CancellationToken cancellationToken)
     {
-        // 1. Lógica de Negocio: Crear la entidad (provista por la clase concreta)
         TEntity entity;
+
+        // 1. Lógica de Dominio: Instanciar la entidad
+        // Capturamos errores de validación de Value Objects (ej. ArgumentException)
         try
         {
             entity = CreateEntity(command);
         }
-        catch (Exception ex)
+        catch (Exception ex) when (ex is ArgumentException || ex is InvalidOperationException)
         {
             return Result.Failure<Guid>(
-                Error.Validation($"Error al crear {typeof(TEntity).Name}: {ex.Message}")
+                Error.Validation(ex.Message) // Devuelve 400 Bad Request
             );
         }
 
-        // 2. Persistencia: Usar el método base, que maneja SaveChanges y Cache Invalidation
+        // 2. Persistencia: Usar el método base
+        // Si hay error de BD (Unique Constraint), el Middleware devuelve 409 Conflict
         var result = await CreateAsync(entity, cancellationToken);
 
-        if (result.IsFailure)
-        {
-            return Result.Failure<Guid>(result.Error);
-        }
-
-        // 3. Mapeo: Mapear la entidad persistida a DTO (Usando Mapster)
-        var dto = result.Value.Adapt<Guid>();
-
-        return Result.Success(dto);
+        // 3. Retorno
+        // CreateAsync ya devuelve Result<Guid>, así que lo pasamos directamente.
+        return result;
     }
 }

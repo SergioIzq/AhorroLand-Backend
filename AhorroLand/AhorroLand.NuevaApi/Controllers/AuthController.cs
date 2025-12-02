@@ -1,7 +1,9 @@
 ﻿using AhorroLand.Application.Features.Auth.Commands.ConfirmEmail;
+using AhorroLand.Application.Features.Auth.Commands.ForgotPassword;
 using AhorroLand.Application.Features.Auth.Commands.Login;
 using AhorroLand.Application.Features.Auth.Commands.Register;
 using AhorroLand.Application.Features.Auth.Commands.ResendConfirmationEmail;
+using AhorroLand.Application.Features.Auth.Commands.ResetPassword;
 using AhorroLand.NuevaApi.Extensions;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
@@ -142,5 +144,44 @@ public class AuthController : ControllerBase
             userId = Guid.Parse(userId ?? Guid.Empty.ToString()),
             email
         });
+    }
+
+    /// <summary>
+    /// Paso 1: Solicita un token de recuperación de contraseña.
+    /// Envía un correo al usuario con las instrucciones.
+    /// </summary>
+    /// <param name="command">Contiene el correo electrónico del usuario.</param>
+    [HttpPost("forgot-password")]
+    [AllowAnonymous]
+    public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordCommand command)
+    {
+        var result = await _mediator.Send(command);
+
+        // Por seguridad, incluso si el correo no existe, solemos devolver Ok
+        // para evitar "Enumeración de usuarios". Pero si tu lógica devuelve fallo:
+        if (result.IsFailure)
+        {
+            return BadRequest(new { mensaje = result.Error.Message });
+        }
+
+        return Ok(new { mensaje = "Si el correo está registrado, se han enviado las instrucciones." });
+    }
+
+    /// <summary>
+    /// Paso 2: Restablece la contraseña utilizando el token recibido por correo.
+    /// </summary>
+    /// <param name="command">Contiene el token, el correo y la nueva contraseña.</param>
+    [HttpPost("reset-password")]
+    [AllowAnonymous]
+    public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordCommand command)
+    {
+        var result = await _mediator.Send(command);
+
+        if (result.IsFailure)
+        {
+            return BadRequest(new { mensaje = result.Error.Message });
+        }
+
+        return Ok(new { mensaje = "Contraseña restablecida exitosamente. Ya puedes iniciar sesión." });
     }
 }

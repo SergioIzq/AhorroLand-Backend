@@ -1,7 +1,5 @@
-﻿using AhorroLand.NuevaApi.Extensions;
-using AhorroLand.NuevaApi.Models.Responses;
+﻿using AhorroLand.Shared.Domain.Abstractions.Enums;
 using AhorroLand.Shared.Domain.Abstractions.Results;
-using AhorroLand.Shared.Domain.Results;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -19,165 +17,114 @@ public abstract class AbsController : ControllerBase
         _sender = sender;
     }
 
+    // ==========================================
+    // 1. MANEJO DE RESULTADOS GENÉRICOS (GET)
+    // ==========================================
+
     /// <summary>
-    /// Maneja el resultado y lo envuelve en ApiResponse
+    /// Retorna 200 OK con el valor si es exitoso, o el error correspondiente.
     /// </summary>
     protected IActionResult HandleResult<T>(Result<T> result)
     {
-        if (result.IsSuccess)
+        if (result.IsFailure)
         {
-            var response = ApiResponse<T>.Ok(result.Value);
-            return Ok(response);
+            return HandleFailure(result.Error);
         }
 
-        return HandleFailure(result.Error);
+        // Devolvemos el Result completo. 
+        // Angular recibirá: { "isSuccess": true, "value": { ...data... }, "error": ... }
+        return Ok(result);
     }
 
+    // ==========================================
+    // 2. MANEJO DE ACCIONES VACÍAS (UPDATE/DELETE)
+    // ==========================================
+
     /// <summary>
-    /// Maneja resultados sin valor (Update, Delete)
+    /// Retorna 204 No Content si es exitoso (ideal para Update/Delete), o el error.
     /// </summary>
     protected IActionResult HandleResult(Result result)
     {
-        if (result.IsSuccess)
+        if (result.IsFailure)
         {
-            return NoContent(); // ✅ 204 No Content para DELETE/UPDATE exitosos
+            return HandleFailure(result.Error);
         }
 
-        return HandleFailure(result.Error);
+        return NoContent();
     }
 
+    // ==========================================
+    // 3. MANEJO DE CREACIÓN (POST)
+    // ==========================================
+
     /// <summary>
-    /// Maneja resultado de creación (devuelve 201 Created con ApiResponse)
+    /// Retorna 201 Created con Location Header si se provee ruta, o 200 OK.
     /// </summary>
-    protected IActionResult HandleResultForCreation<T>(Result<T> result, string actionName, object routeValues)
+    protected IActionResult HandleResultForCreation<T>(Result<T> result, string? actionName = null, object? routeValues = null)
     {
-        if (result.IsSuccess)
+        if (result.IsFailure)
         {
-            var response = ApiResponse<T>.Ok(result.Value, "Recurso creado exitosamente");
-            return CreatedAtAction(actionName, routeValues, response);
+            return HandleFailure(result.Error);
         }
 
-        return HandleFailure(result.Error);
-    }
-
-    /// <summary>
-    /// 🆕 Maneja resultado paginado y lo envuelve en ApiResponse con PaginatedResponse
-    /// </summary>
-    protected IActionResult HandlePagedResult<T>(Result<PagedList<T>> result)
-    {
-        if (result.IsSuccess)
+        // Si especificamos una acción (ej. "GetUserById"), devolvemos 201 con cabecera Location
+        if (!string.IsNullOrEmpty(actionName) && routeValues != null)
         {
-            var pagedData = result.Value;
-            var paginatedResponse = new PaginatedResponse<T>(
-                pagedData.Items,
-                pagedData.TotalCount,
-                pagedData.Page,
-                pagedData.PageSize
-            );
-
-            var response = ApiResponse<PaginatedResponse<T>>.Ok(paginatedResponse);
-            return Ok(response);
+            return CreatedAtAction(actionName, routeValues, result);
         }
 
-        return HandleFailure(result.Error);
+        // Si no, simplemente un 200/201 genérico con el body
+        return StatusCode(StatusCodes.Status201Created, result);
     }
 
-    /// <summary>
-    /// 🆕 Maneja lista simple (search, recent) y la envuelve en ApiResponse con ListResponse
-    /// </summary>
-    protected IActionResult HandleListResult<T>(Result<IEnumerable<T>> result, string? message = null)
-    {
-        if (result.IsSuccess)
-        {
-            var listResponse = new ListResponse<T>(result.Value);
-            var response = ApiResponse<ListResponse<T>>.Ok(listResponse, message);
-            return Ok(response);
-        }
-
-        return HandleFailure(result.Error);
-    }
+    // ==========================================
+    // 4. MANEJO DE ERRORES CENTRALIZADO
+    // ==========================================
 
     /// <summary>
-    /// ✅ Maneja errores y devuelve el código HTTP apropiado según el código de error
+    /// Convierte un Error de Dominio en una respuesta HTTP con el código correcto.
     /// </summary>
     private IActionResult HandleFailure(Error error)
     {
-        // Determinar el código de estado HTTP según el código de error
-        var statusCode = error.Code switch
+        // Mapeo limpio basado en el Enum (No strings mágicos)
+        var statusCode = error.Type switch
         {
-            "Error.NotFound" => StatusCodes.Status404NotFound,
-            "Error.Conflict" => StatusCodes.Status409Conflict,
-            "Error.Validation" => StatusCodes.Status400BadRequest,
-            "Error.UpdateFailure" => StatusCodes.Status500InternalServerError,
-            "Error.DeleteFailure" => StatusCodes.Status500InternalServerError,
-            _ => StatusCodes.Status500InternalServerError
+            ErrorType.Validation => StatusCodes.Status400BadRequest,
+            ErrorType.NotFound => StatusCodes.Status404NotFound,
+            ErrorType.Conflict => StatusCodes.Status409Conflict,
+            ErrorType.Unauthorized => StatusCodes.Status401Unauthorized,
+            ErrorType.Forbidden => StatusCodes.Status403Forbidden,
+            _ => StatusCodes.Status500InternalServerError // Failure por defecto
         };
 
-        // Crear respuesta de error usando el formato de ApiResponse
-        var errorResponse = new
-        {
-            success = false,
-            error = new
-            {
-                code = error.Code,
-                title = error.Name,
-                detail = error.Message
-            },
-            timestamp = DateTime.UtcNow
-        };
-
-        return StatusCode(statusCode, errorResponse);
+        var failureResult = Result.Failure(error);
+        return StatusCode(statusCode, failureResult);
     }
 
-    // 🍪 Métodos helper para cookies
+    // ==========================================
+    // 5. HELPERS DE INFRAESTRUCTURA (Cookies/User)
+    // ==========================================
 
-    /// <summary>
-    /// Establece una cookie de forma segura.
-    /// </summary>
-    protected void SetCookie(string key, string value, int? expireMinutes = null, bool httpOnly = true)
-    {
-        Response.SetCookie(key, value, expireMinutes, httpOnly, secure: !IsDevelopment(), SameSiteMode.Strict);
-    }
-
-    /// <summary>
-    /// Obtiene el valor de una cookie.
-    /// </summary>
-    protected string? GetCookie(string key)
-    {
-        return Request.GetCookie(key);
-    }
-
-    /// <summary>
-    /// Elimina una cookie.
-    /// </summary>
-    protected void DeleteCookie(string key)
-    {
-        Response.DeleteCookie(key);
-    }
-
-    /// <summary>
-    /// Obtiene el ID del usuario autenticado desde los claims.
-    /// </summary>
     protected Guid? GetCurrentUserId()
     {
         var userIdClaim = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
         return Guid.TryParse(userIdClaim, out var userId) ? userId : null;
     }
 
-    /// <summary>
-    /// Obtiene el email del usuario autenticado desde los claims.
-    /// </summary>
-    protected string? GetCurrentUserEmail()
+    protected void SetRefreshTokenCookie(string token, int expireDays = 7)
     {
-        return User.FindFirst(System.Security.Claims.ClaimTypes.Email)?.Value;
+        var cookieOptions = new CookieOptions
+        {
+            HttpOnly = true,
+            Expires = DateTime.UtcNow.AddDays(expireDays),
+            SameSite = SameSiteMode.Strict,
+            Secure = !IsDevelopment()
+        };
+        Response.Cookies.Append("refreshToken", token, cookieOptions);
     }
 
-    /// <summary>
-    /// Verifica si la aplicación está en modo desarrollo.
-    /// </summary>
     private bool IsDevelopment()
     {
-        return HttpContext.RequestServices
-            .GetService<IWebHostEnvironment>()?.IsDevelopment() ?? false;
+        return HttpContext.RequestServices.GetService<IWebHostEnvironment>()?.IsDevelopment() ?? false;
     }
 }
