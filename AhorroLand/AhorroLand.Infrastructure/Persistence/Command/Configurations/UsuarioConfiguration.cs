@@ -71,6 +71,24 @@ namespace AhorroLand.Infrastructure.Persistence.Command.Configurations.Configura
                   .ValueGeneratedOnAdd()
             .Metadata.SetAfterSaveBehavior(PropertySaveBehavior.Ignore);
 
+            builder.Property(e => e.Nombre)
+                    .HasColumnName("nombre")
+                     .HasColumnType("varchar")
+                         .HasMaxLength(100)
+                    .IsRequired(false)
+                    .HasConversion(
+                    token => token.HasValue ? token.Value.Value : null,
+                    value => string.IsNullOrEmpty(value) ? null : new Nombre(value));
+
+            builder.Property(e => e.Apellidos)
+                    .HasColumnName("apellido")
+                    .HasColumnType("varchar")
+                    .HasMaxLength(100)
+                    .IsRequired(false)
+                    .HasConversion(
+                    token => token.HasValue ? token.Value.Value : null,
+                    value => string.IsNullOrEmpty(value) ? null : new Apellido(value));
+
             // ? Índice único en el correo
             builder.HasIndex(e => e.Correo)
                  .IsUnique()

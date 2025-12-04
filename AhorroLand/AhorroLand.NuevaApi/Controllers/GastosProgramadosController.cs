@@ -73,7 +73,6 @@ public class GastosProgramadosController : AbsController
             PersonaId = request.PersonaId,
             CuentaId = request.CuentaId,
             FormaPagoId = request.FormaPagoId,
-            UsuarioId = usuarioId.Value // 👈 Seguridad
         };
 
         var result = await _sender.Send(command);

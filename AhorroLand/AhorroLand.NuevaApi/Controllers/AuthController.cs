@@ -4,6 +4,7 @@ using AhorroLand.Application.Features.Auth.Commands.Login;
 using AhorroLand.Application.Features.Auth.Commands.Register;
 using AhorroLand.Application.Features.Auth.Commands.ResendConfirmationEmail;
 using AhorroLand.Application.Features.Auth.Commands.ResetPassword;
+using AhorroLand.Application.Features.Auth.Queries;
 using AhorroLand.NuevaApi.Controllers.Base; // ✅ Usamos tu controlador base
 using AhorroLand.NuevaApi.Extensions; // Para cookies si las usas como extensiones
 using AhorroLand.Shared.Domain.Abstractions.Results; // Para Result
@@ -126,20 +127,26 @@ public class AuthController : AbsController // ✅ Heredamos de AbsController
     }
 
     /// <summary>
-    /// Obtiene información del usuario actualmente autenticado.
+    /// Obtiene información completa del usuario desde la base de datos.
     /// </summary>
     [HttpGet("me")]
     [Authorize]
-    public IActionResult GetCurrentUser()
+    public async Task<IActionResult> GetCurrentUser()
     {
-        var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
-        var email = User.FindFirst(System.Security.Claims.ClaimTypes.Email)?.Value;
+        // 1. Obtenemos el ID del claim (Token)
+        var userId = GetCurrentUserId();
 
-        return Ok(new
+        if (userId == null)
         {
-            userId = Guid.Parse(userId ?? Guid.Empty.ToString()),
-            email
-        });
+            return Unauthorized(Result.Failure(Error.Unauthorized("Usuario no autenticado.")));
+        }
+
+        // 2. Lanzamos la Query para buscar los datos reales en BD
+        var query = new GetUserProfileQuery(userId.Value);
+        var result = await _sender.Send(query);
+
+        // 3. Devolvemos el resultado (que ahora incluye nombre, apellido, etc.)
+        return HandleResult(result);
     }
 
     /// <summary>

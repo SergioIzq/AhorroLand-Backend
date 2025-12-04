@@ -1,7 +1,6 @@
 ﻿using AhorroLand.Application.Features.Personas.Commands;
 using AhorroLand.Application.Features.Personas.Queries;
 using AhorroLand.Application.Features.Personas.Queries.Recent;
-using AhorroLand.Application.Features.Personas.Queries.Search; // Asegúrate de tener este namespace
 using AhorroLand.NuevaApi.Controllers.Base;
 using AhorroLand.Shared.Domain.Abstractions.Results; // Para Error y Result
 using MediatR;
