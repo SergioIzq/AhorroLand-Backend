@@ -1,12 +1,15 @@
-﻿namespace AhorroLand.Shared.Application.Dtos
+﻿namespace AhorroLand.Shared.Application.Dtos;
+
+// Propiedades init-only (Dapper llena solo lo que encuentra)
+public record UsuarioDto
 {
-    /// <summary>
-    /// Representación de los datos públicos del Usuario para ser expuesta.
-    /// NO incluye contraseñas, hashes, ni tokens de confirmación.
-    /// </summary>
-    public record UsuarioDto(
-        Guid Id,
-        string Correo,
-        bool Activo
-    );
+    public Guid Id { get; init; }
+    public string Correo { get; init; } = string.Empty;
+    public string Nombre { get; init; } = string.Empty;
+    public string? Apellidos { get; init; }
+    public DateTime FechaCreacion { get; init; }
+
+    // Estas quedarán null automáticamente si el SQL no las trae
+    public string? Rol { get; init; }
+    public string? Avatar { get; init; }
 }

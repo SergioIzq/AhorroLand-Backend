@@ -22,7 +22,9 @@ public sealed class Usuario : AbsEntity<UsuarioId>
         ConfirmationToken? tokenConfirmacion,
         bool activo,
         ConfirmationToken? tokenRecuperacion = null,
-        DateTime? tokenRecuperacionExpiracion = null
+        DateTime? tokenRecuperacionExpiracion = null,
+        Nombre? nombre = null,
+        Apellido? apellidos = null
         ) : base(id)
     {
         Correo = correo;
@@ -31,9 +33,13 @@ public sealed class Usuario : AbsEntity<UsuarioId>
         Activo = activo;
         TokenRecuperacion = tokenRecuperacion;
         TokenRecuperacionExpiracion = tokenRecuperacionExpiracion;
+        Nombre = nombre;
+        Apellidos = apellidos;
     }
 
     public Email Correo { get; private set; }
+    public Nombre? Nombre { get; private set; }
+    public Apellido? Apellidos { get; private set; }
     public PasswordHash ContrasenaHash { get; private set; }
     public ConfirmationToken? TokenConfirmacion { get; private set; }
     public ConfirmationToken? TokenRecuperacion { get; private set; }

@@ -31,41 +31,32 @@ public sealed class LoginCommandHandler : ICommandHandler<LoginCommand, LoginRes
 
     public async Task<Result<LoginResponse>> Handle(LoginCommand request, CancellationToken cancellationToken)
     {
-        try
+        var emailVO = new Email(request.Correo);
+        var usuario = await _usuarioReadRepository.GetByEmailAsync(emailVO, cancellationToken);
+
+        if (usuario is null)
         {
-            var emailVO = new Email(request.Correo);
-            var usuario = await _usuarioReadRepository.GetByEmailAsync(emailVO, cancellationToken);
-
-            if (usuario is null)
-            {
-                // SEGURIDAD: Decimos "Credenciales inválidas" para no revelar que el email no existe.
-                return Result.Failure<LoginResponse>(AuthErrors.InvalidCredentials);
-            }
-
-            // 4. Verificar contraseña
-            var isPasswordValid = _passwordHasher.VerifyPassword(request.Contrasena, usuario.ContrasenaHash.Value);
-
-            if (!isPasswordValid)
-            {
-                // Mismo error que arriba. El atacante no sabe si falló el email o el pass.
-                return Result.Failure<LoginResponse>(AuthErrors.InvalidCredentials);
-            }
-
-            if (!usuario.Activo)
-            {
-                return Result.Failure<LoginResponse>(UsuarioErrors.DeactivatedAccount);
-            }
-
-            var (token, expiresAt) = _jwtTokenGenerator.GenerateToken(usuario);
-
-            return Result.Success(new LoginResponse(token, expiresAt));
+            // SEGURIDAD: Decimos "Credenciales inválidas" para no revelar que el email no existe.
+            return Result.Failure<LoginResponse>(AuthErrors.InvalidCredentials);
         }
-        catch (Exception ex)
+
+        // 4. Verificar contraseña
+        var isPasswordValid = _passwordHasher.VerifyPassword(request.Contrasena, usuario.ContrasenaHash.Value);
+
+        if (!isPasswordValid)
         {
-            _logger.LogCritical(ex, "Error during login for email {Email}", request.Correo);
-
-            return Result.Failure<LoginResponse>(SystemErrors.InternalServerError);
+            // Mismo error que arriba. El atacante no sabe si falló el email o el pass.
+            return Result.Failure<LoginResponse>(AuthErrors.InvalidCredentials);
         }
+
+        if (!usuario.Activo)
+        {
+            return Result.Failure<LoginResponse>(UsuarioErrors.DeactivatedAccount);
+        }
+
+        var (token, expiresAt) = _jwtTokenGenerator.GenerateToken(usuario);
+
+        return Result.Success(new LoginResponse(token, expiresAt));
     }
 }
 

@@ -5,90 +5,134 @@ using AhorroLand.Shared.Domain.Interfaces;
 using AhorroLand.Shared.Domain.ValueObjects;
 using AhorroLand.Shared.Domain.ValueObjects.Ids;
 using Dapper;
+using System.Reflection;
 
 namespace AhorroLand.Infrastructure.Persistence.Data.Usuarios;
 
 public sealed class UsuarioReadRepository : AbsReadRepository<Usuario, UsuarioDto, UsuarioId>, IUsuarioReadRepository
 {
+    // Cacheamos el constructor para no usar Reflection lento en cada llamada
+    private static readonly ConstructorInfo UsuarioConstructor = typeof(Usuario).GetConstructor(
+        BindingFlags.NonPublic | BindingFlags.Instance,
+        null,
+        new[] {
+            typeof(UsuarioId), typeof(Email), typeof(PasswordHash), typeof(ConfirmationToken?),
+            typeof(bool), typeof(ConfirmationToken?), typeof(DateTime?), typeof(Nombre?), typeof(Apellido?)
+        },
+        null)!;
+
     public UsuarioReadRepository(IDbConnectionFactory connectionFactory)
         : base(connectionFactory, "usuarios")
     {
     }
 
+    protected override string BuildGetByIdQuery()
+    {
+        return @"
+          SELECT 
+            id as Id,
+            correo as Correo,
+            nombre as Nombre,
+            apellidos as Apellidos,
+            fecha_creacion as FechaCreacion
+          FROM usuarios 
+          WHERE id = @id";
+    }
+
     public async Task<Usuario?> GetByEmailAsync(Email correo, CancellationToken cancellationToken = default)
     {
+        // Seleccionamos las columnas primitivas
         const string sql = @"
-            SELECT id, correo, contrasena as Contrasena, token_confirmacion as TokenConfirmacion, activo, token_recuperacion as TokenRecuperacion, token_recuperacion_expiracion as TokenExpiracion
-             FROM usuarios
+            SELECT 
+                id, 
+                correo, 
+                nombre, 
+                apellidos, 
+                contrasena, 
+                token_confirmacion, 
+                activo, 
+                token_recuperacion, 
+                token_recuperacion_expiracion
+            FROM usuarios
             WHERE correo = @Correo
             LIMIT 1";
 
-        var connection = _dbConnectionFactory.CreateConnection();
-        var result = await connection.QueryFirstOrDefaultAsync<UsuarioDataModel>(sql, new { Correo = correo.Value });
+        using var connection = _dbConnectionFactory.CreateConnection();
 
-        return result != null ? MapToEntity(result) : null;
+        // Usamos dynamic para evitar la clase UsuarioDataModel
+        var row = await connection.QueryFirstOrDefaultAsync(sql, new { Correo = correo.Value });
+
+        if (row == null) return null;
+
+        return MapRowToUsuario(row);
     }
 
     public async Task<Usuario?> GetByConfirmationTokenAsync(string token, CancellationToken cancellationToken = default)
     {
         const string sql = @"
-            SELECT id, correo, contrasena as Contrasena, token_confirmacion as TokenConfirmacion, activo
-                    FROM usuarios
-             WHERE token_confirmacion = @Token
+            SELECT 
+                id, 
+                correo, 
+                nombre, 
+                apellidos, 
+                contrasena, 
+                token_confirmacion, 
+                activo, 
+                token_recuperacion, 
+                token_recuperacion_expiracion
+            FROM usuarios
+            WHERE token_confirmacion = @Token
             LIMIT 1";
 
-        var connection = _dbConnectionFactory.CreateConnection();
-        var result = await connection.QueryFirstOrDefaultAsync<UsuarioDataModel>(sql, new { Token = token });
+        using var connection = _dbConnectionFactory.CreateConnection();
+        var row = await connection.QueryFirstOrDefaultAsync(sql, new { Token = token });
 
-        return result != null ? MapToEntity(result) : null;
+        if (row == null) return null;
+
+        return MapRowToUsuario(row);
     }
 
-    private Usuario MapToEntity(UsuarioDataModel dto)
+    // Método helper limpio que convierte dynamic (BD) -> Dominio
+    private Usuario MapRowToUsuario(dynamic row)
     {
-        // Usar reflection para crear la entidad con constructor privado
-        var constructor = typeof(Usuario).GetConstructor(
-          System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance,
-                    null,
-                    new[] { typeof(UsuarioId), typeof(Email), typeof(PasswordHash), typeof(ConfirmationToken?), typeof(bool), typeof(ConfirmationToken?), typeof(DateTime?) },
-            null);
+        var id = new UsuarioId(Guid.Parse(row.id.ToString()));
+        var email = new Email((string)row.correo);
+        var password = new PasswordHash((string)row.contrasena);
 
-        var usuarioId = new UsuarioId(dto.Id);
-        var email = new Email(dto.Correo);
-        var passwordHash = new PasswordHash(dto.Contrasena);
-        ConfirmationToken? tokenRecuperacion = null;
-        DateTime? tokenRecuperacionExpiracion = null;
+        // 🔧 CORRECCIÓN 1: Cast explícito a (ConfirmationToken?)null
+        // C# necesita saber qué tipo de "null" es para el operador ternario.
+        var tokenConf = row.token_confirmacion != null
+            ? new ConfirmationToken((string)row.token_confirmacion)
+            : (ConfirmationToken?)null;
 
-        if(dto.TokenExpiracion is not null && dto.TokenRecuperacion is not null)
-        {
-            tokenRecuperacion = new ConfirmationToken(dto.TokenRecuperacion);
-            tokenRecuperacionExpiracion = dto.TokenExpiracion.Value;
-        }
+        var tokenRecup = row.token_recuperacion != null
+            ? new ConfirmationToken((string)row.token_recuperacion)
+            : (ConfirmationToken?)null;
 
-        // Asumiendo que ConfirmationToken es un struct o class con constructor que recibe string
-        ConfirmationToken? token = dto.TokenConfirmacion != null
-            ? new ConfirmationToken(dto.TokenConfirmacion)
+        DateTime? tokenExp = row.token_recuperacion_expiracion != null
+            ? (DateTime)row.token_recuperacion_expiracion
             : null;
 
-        // 2. Pasar los objetos tipados al constructor
-        return (Usuario)constructor!.Invoke([
-            usuarioId,
-            email,
-            passwordHash,
-            token,
-            dto.Activo,
-            tokenRecuperacion,
-            tokenRecuperacionExpiracion
-        ]);
-    }
+        var nombre = row.nombre != null
+            ? Nombre.CreateFromDatabase((string)row.nombre)
+            : (Nombre?)null;
 
-    private class UsuarioDataModel
-    {
-        public Guid Id { get; set; }
-        public string Correo { get; set; } = string.Empty;
-        public string Contrasena { get; set; } = string.Empty;
-        public string? TokenConfirmacion { get; set; }
-        public string? TokenRecuperacion { get; set; }
-        public DateTime? TokenExpiracion { get; set; }
-        public bool Activo { get; set; }
+        // 2. Cast explícito para Apellido
+        var apellidos = row.apellidos != null
+            ? Apellido.CreateFromDatabase((string)row.apellidos)
+            : (Apellido?)null;
+
+        // Invocamos el constructor privado
+        return (Usuario)UsuarioConstructor.Invoke(new object?[] {
+        id,
+        email,
+        password,
+        tokenConf,
+        (bool)row.activo,
+        tokenRecup,
+        tokenExp,
+        nombre,
+        apellidos
+    });
     }
 }

@@ -13,4 +13,6 @@ public readonly record struct Nombre
 
         this.Value = value;
     }
+
+    public static Nombre CreateFromDatabase(string value) => new Nombre(value);
 }
