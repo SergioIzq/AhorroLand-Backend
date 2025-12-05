@@ -1,25 +1,27 @@
 ﻿namespace AhorroLand.Shared.Application.Dtos
 {
     /// <summary>
-    /// Representación de un Traspaso para ser expuesta. Contiene los IDs de las cuentas y los valores primitivos.
+    /// Representación de un Traspaso Programado para ser expuesta. Contiene los IDs de las cuentas y los valores primitivos.
     /// </summary>
-    public record TraspasoProgramadoDto(
-        Guid Id,
+    public record TraspasoProgramadoDto
+    {
+        public Guid Id { get; init; }
 
         // Value Objects
-        decimal Importe,
-        DateTime Fecha,
-        string? Descripcion,
+        public decimal Importe { get; init; }
+        public DateTime Fecha { get; init; }
+        public string? Descripcion { get; init; }
 
         // Relaciones (Flattened)
-        Guid CuentaOrigenId,
-        string CuentaOrigenNombre,
-        Guid CuentaDestinoId,
-        string CuentaDestinoNombre,
-        Guid UsuarioId,
+        public Guid CuentaOrigenId { get; init; }
+        public string CuentaOrigenNombre { get; init; } = string.Empty;
+        public Guid CuentaDestinoId { get; init; }
+        public string CuentaDestinoNombre { get; init; } = string.Empty;
+        public Guid UsuarioId { get; init; }
+        
         // ⭐ PROPIEDADES FALTANTES AÑADIDAS
-        string Frecuencia,
-        bool Activo,
-        string HangfireJobId
-    );
+        public string Frecuencia { get; init; } = string.Empty;
+        public bool Activo { get; init; }
+        public string HangfireJobId { get; init; } = string.Empty;
+    }
 }

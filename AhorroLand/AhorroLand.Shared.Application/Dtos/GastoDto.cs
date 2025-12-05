@@ -3,30 +3,31 @@
     /// <summary>
     /// Representación del Gasto para ser expuesta. Contiene IDs y datos clave de las entidades relacionadas.
     /// </summary>
-    public record GastoDto(
-        Guid Id,
-        decimal Importe,
-        DateTime Fecha,
-        string? Descripcion,
+    public record GastoDto
+    {
+        public Guid Id { get; init; }
+        public decimal Importe { get; init; }
+        public DateTime Fecha { get; init; }
+        public string? Descripcion { get; init; }
 
         // Relaciones (Flattened)
-        Guid ConceptoId,
-        string ConceptoNombre,
-        Guid? CategoriaId, // 🔥 NULLABLE: CategoriaId viene del Concepto (LEFT JOIN)
-        string? CategoriaNombre, // 🔥 NULLABLE: puede ser null si no hay categoría
+        public Guid ConceptoId { get; init; }
+        public string ConceptoNombre { get; init; } = string.Empty;
+        public Guid? CategoriaId { get; init; } // 🔥 NULLABLE: CategoriaId viene del Concepto (LEFT JOIN)
+        public string? CategoriaNombre { get; init; } // 🔥 NULLABLE: puede ser null si no hay categoría
 
-        Guid? ProveedorId, // 🔥 NULLABLE: el gasto puede no tener proveedor
-        string? ProveedorNombre, // 🔥 NULLABLE
+        public Guid ProveedorId { get; init; }
+        public string ProveedorNombre { get; init; } = string.Empty;
 
-        Guid? PersonaId, // 🔥 NULLABLE: el gasto puede no tener persona
-        string? PersonaNombre, // 🔥 NULLABLE
+        public Guid? PersonaId { get; init; }
+        public string PersonaNombre { get; init; } = string.Empty;
 
-        Guid CuentaId,
-        string CuentaNombre,
+        public Guid CuentaId { get; init; }
+        public string CuentaNombre { get; init; } = string.Empty;
 
-        Guid FormaPagoId,
-        string FormaPagoNombre,
+        public Guid FormaPagoId { get; init; }
+        public string FormaPagoNombre { get; init; } = string.Empty;
 
-        Guid UsuarioId
-    );
+        public Guid UsuarioId { get; init; }
+    }
 }

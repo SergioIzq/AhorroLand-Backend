@@ -5,7 +5,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace AhorroLand.Domain;
 
-[Table("conceptos")]
+[Table("cuentas")]
 public sealed class Cuenta : AbsEntity<CuentaId>
 {
     // Constructor privado sin parámetros para EF Core
