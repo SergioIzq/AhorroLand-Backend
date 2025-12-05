@@ -1,5 +1,6 @@
 ﻿using AhorroLand.Domain;
 using AhorroLand.Shared.Application.Dtos;
+using AhorroLand.Shared.Domain.ValueObjects;
 using AhorroLand.Shared.Domain.ValueObjects.Ids;
 using Mapster;
 using MapsterMapper;
@@ -14,29 +15,51 @@ public static class MapsterConfig
     {
         var config = TypeAdapterConfig.GlobalSettings;
 
-        TypeAdapterConfig.GlobalSettings.Default.PreserveReference(true);
+        // Recomendado: Para evitar bucles infinitos en relaciones circulares
+        config.Default.PreserveReference(true);
 
-        // 2. Aplicar Configuraciones (Mapas Específicos)
-        // Escanea las asambleas donde defines tus mapeos específicos (si usas IRegister)
-        TypeAdapterConfig.GlobalSettings.Scan(
+        // Recomendado: Ignorar nulos al mapear si quieres evitar sobrescribir datos con nulls (opcional)
+        // config.Default.IgnoreNullValues(true);
+
+        // ---------------------------------------------------------
+        // 1. MAPEOS GLOBALES PARA VALUE OBJECTS (PRIMITIVIZACIÓN)
+        // ---------------------------------------------------------
+        // Al definir esto aquí, Mapster sabrá automáticamente cómo convertir
+        // Gasto.Importe (Cantidad) -> GastoDto.Importe (decimal)
+        // sin que tengas que repetirlo en cada DTO.
+
+        // --- IDs ---
+        config.NewConfig<UsuarioId, Guid>().MapWith(src => src.Value);
+        config.NewConfig<Guid, UsuarioId>().MapWith(src => UsuarioId.CreateFromDatabase(src));
+
+        config.NewConfig<GastoId, Guid>().MapWith(src => src.Value);
+        config.NewConfig<ConceptoId, Guid>().MapWith(src => src.Value);
+        config.NewConfig<ProveedorId, Guid>().MapWith(src => src.Value);
+        config.NewConfig<PersonaId, Guid>().MapWith(src => src.Value);
+        config.NewConfig<CuentaId, Guid>().MapWith(src => src.Value);
+        config.NewConfig<FormaPagoId, Guid>().MapWith(src => src.Value);
+        config.NewConfig<CategoriaId, Guid>().MapWith(src => src.Value);
+
+        // --- Valores de Dominio ---
+        config.NewConfig<Cantidad, decimal>().MapWith(src => src.Valor);
+        config.NewConfig<FechaRegistro, DateTime>().MapWith(src => src.Valor);
+
+        // Para Descripcion (que puede ser nula), manejamos el null check
+        config.NewConfig<Descripcion, string?>()
+              .MapWith(src => src != null ? src._Value : null);
+
+
+        // ---------------------------------------------------------
+        // 2. ESCANEO DE REGISTROS (IRegister)
+        // ---------------------------------------------------------
+        config.Scan(
             Assembly.GetExecutingAssembly(),
             Assembly.GetAssembly(typeof(Cliente))!,
-            Assembly.GetAssembly(typeof(ClienteDto))! // Escanear también donde están los DTOs
+            Assembly.GetAssembly(typeof(ClienteDto))!
         );
 
-        // ❌ ELIMINADO: Ya está configurado en ClienteMappingRegister
-        // config.NewConfig<ClienteDto, Cliente>()
-        //   .MapWith(src => Cliente.Create(new Nombre(src.Nombre), new UsuarioId(src.UsuarioId)));
-
-        // ✅ Mapeo global para Value Objects → Guid
-        config.NewConfig<UsuarioId, Guid>()
-            .MapWith(src => src.Value);
-
-        config.NewConfig<Guid, UsuarioId>()
-            .MapWith(src => UsuarioId.Create(src).Value);
-
         // 3. Registrar la configuración como Singleton
-        services.AddSingleton(TypeAdapterConfig.GlobalSettings);
+        services.AddSingleton(config);
 
         // 4. Registrar IAdapter (para usar .Adapt<T> fuera del DbContext)
         services.AddSingleton<IMapper, ServiceMapper>();

@@ -27,15 +27,15 @@ public readonly record struct Cantidad
 
         if (valor != Math.Round(valor, 2))
         {
-            return Result.Failure<Cantidad>(Error.Validation($"La cantidad tiene más de dos decimales significativos. Valor recibido: {valor}"));
+            return Result.Failure<Cantidad>(Error.Validation($"La cantidad tiene más de dos decimales significativos."));
         }
 
         return Result.Success(new Cantidad(valor));
     }
 
-    public static Cantidad CreateFromDatabase(decimal valor) => new Cantidad(valor);
+    public static Cantidad CreateFromDatabase(decimal valor) => new (valor);
 
-    public Cantidad Sumar(Cantidad otro) => new Cantidad(this.Valor + otro.Valor);
-    public Cantidad Restar(Cantidad otro) => new Cantidad(this.Valor - otro.Valor);
-    public static Cantidad Zero() => new Cantidad(0);
+    public Cantidad Sumar(Cantidad otro) => new (Valor + otro.Valor);
+    public Cantidad Restar(Cantidad otro) => new (Valor - otro.Valor);
+    public static Cantidad Zero() => new (0);
 }

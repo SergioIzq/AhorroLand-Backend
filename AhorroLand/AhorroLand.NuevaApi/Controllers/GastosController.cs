@@ -58,8 +58,7 @@ public class GastosController : AbsController
     [HttpPost]
     public async Task<IActionResult> Create([FromBody] CreateGastoRequest request)
     {
-        // Asignación inteligente de UsuarioId
-        var usuarioId = request.UsuarioId != Guid.Empty ? request.UsuarioId : GetCurrentUserId() ?? Guid.Empty;
+        var userId = GetCurrentUserId();
 
         var command = new CreateGastoCommand
         {
@@ -72,7 +71,7 @@ public class GastosController : AbsController
             PersonaId = request.PersonaId,
             CuentaId = request.CuentaId,
             FormaPagoId = request.FormaPagoId,
-            UsuarioId = usuarioId
+            UsuarioId = userId!.Value
         };
 
         var result = await _sender.Send(command);
@@ -91,6 +90,7 @@ public class GastosController : AbsController
         // Nota: En Updates, generalmente no permitimos cambiar el UsuarioId (seguridad),
         // por lo que usamos el del request si viene, pero el Handler debería validar la propiedad.
         // Opcionalmente podrías forzar: command.UsuarioId = GetCurrentUserId();
+        var userId = GetCurrentUserId();
 
         var command = new UpdateGastoCommand
         {
@@ -104,7 +104,7 @@ public class GastosController : AbsController
             PersonaId = request.PersonaId,
             CuentaId = request.CuentaId,
             FormaPagoId = request.FormaPagoId,
-            UsuarioId = request.UsuarioId
+            UsuarioId = userId!.Value
         };
 
         var result = await _sender.Send(command);
@@ -130,8 +130,7 @@ public record CreateGastoRequest(
     Guid ProveedorId,
     Guid PersonaId,
     Guid CuentaId,
-    Guid FormaPagoId,
-    Guid UsuarioId
+    Guid FormaPagoId
 );
 
 public record UpdateGastoRequest(
@@ -143,6 +142,5 @@ public record UpdateGastoRequest(
     Guid ProveedorId,
     Guid PersonaId,
     Guid CuentaId,
-    Guid FormaPagoId,
-    Guid UsuarioId
+    Guid FormaPagoId
 );

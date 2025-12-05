@@ -1,33 +1,35 @@
 ﻿namespace AhorroLand.Shared.Application.Dtos
 {
-    public record GastoProgramadoDto(
-        Guid Id,
-        decimal Importe,
-        DateTime FechaEjecucion,
-        string? Descripcion,
+    public record GastoProgramadoDto
+    {
+        public Guid Id { get; init; }
+        public decimal Importe { get; init; }
+        public DateTime FechaEjecucion { get; init; }
+        public string? Descripcion { get; init; }
 
         // ⭐ PROPIEDADES FALTANTES AÑADIDAS
-        string Frecuencia,
-        bool Activo,
-        string HangfireJobId,
+        public string Frecuencia { get; init; } = string.Empty;
+        public bool Activo { get; init; }
+        public string HangfireJobId { get; init; } = string.Empty;
 
         // Relaciones (Flattened)
-        Guid ConceptoId,
-        string ConceptoNombre,
-        Guid CategoriaId,
-        string CategoriaNombre,
+        public Guid ConceptoId { get; init; }
+        public string ConceptoNombre { get; init; } = string.Empty;
+        public Guid CategoriaId { get; init; }
+        public string CategoriaNombre { get; init; } = string.Empty;
 
-        Guid ProveedorId,
-        string ProveedorNombre,
+        public Guid ProveedorId { get; init; }
+        public string ProveedorNombre { get; init; } = string.Empty;
 
-        Guid PersonaId,
-        string PersonaNombre,
+        public Guid PersonaId { get; init; }
+        public string PersonaNombre { get; init; } = string.Empty;
 
-        Guid CuentaId,
-        string CuentaNombre,
+        public Guid CuentaId { get; init; }
+        public string CuentaNombre { get; init; } = string.Empty;
 
-        Guid FormaPagoId,
-        string FormaPagoNombre,
-        Guid UsuarioId
-    );
+        public Guid FormaPagoId { get; init; }
+        public string FormaPagoNombre { get; init; } = string.Empty;
+        
+        public Guid UsuarioId { get; init; }
+    }
 }

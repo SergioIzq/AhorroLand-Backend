@@ -34,7 +34,7 @@ public readonly record struct UsuarioId : IGuidValueObject
         return Result.Success(new UsuarioId(value));
     }
 
-    public static UsuarioId CreateFromDatabase(Guid value) => new UsuarioId(value);
+    public static UsuarioId CreateFromDatabase(Guid value) => new (value);
 
     public override string ToString() => Value.ToString("D");
 }

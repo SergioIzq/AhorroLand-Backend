@@ -28,22 +28,29 @@ public sealed class CreateIngresoCommandHandler
     public override async Task<Result<Guid>> Handle(
         CreateIngresoCommand command, CancellationToken cancellationToken)
     {
-        var existenceTasks = new List<Task<bool>>
-        {
-            _validator.ExistsAsync<Concepto, ConceptoId>(ConceptoId.Create(command.ConceptoId).Value),
-            _validator.ExistsAsync<Categoria, CategoriaId>(CategoriaId.Create(command.CategoriaId).Value),
-            _validator.ExistsAsync < Cuenta, CuentaId >(CuentaId.Create(command.CuentaId).Value),
-            _validator.ExistsAsync < FormaPago, FormaPagoId >(FormaPagoId.Create(command.FormaPagoId).Value),
-            _validator.ExistsAsync < Cliente, ClienteId >(ClienteId.Create(command.ClienteId).Value),
-            _validator.ExistsAsync < Persona, PersonaId >(PersonaId.Create(command.PersonaId).Value)
-        };
+        var validations = new List<(string Entity, Guid Id, Task<bool> Task)>
+                        {
+                            ("Concepto", command.ConceptoId, _validator.ExistsAsync<Concepto, ConceptoId>(ConceptoId.Create(command.ConceptoId).Value)),
+                            ("Categoria", command.CategoriaId, _validator.ExistsAsync<Categoria, CategoriaId>(CategoriaId.Create(command.CategoriaId).Value)),
+                            ("Cuenta", command.CuentaId, _validator.ExistsAsync<Cuenta, CuentaId>(CuentaId.Create(command.CuentaId).Value)),
+                            ("FormaPago", command.FormaPagoId, _validator.ExistsAsync<FormaPago, FormaPagoId>(FormaPagoId.Create(command.FormaPagoId).Value)),
+                            ("Cliente", command.ClienteId, _validator.ExistsAsync<Cliente, ClienteId>(ClienteId.Create(command.ClienteId).Value)),
+                            ("Persona", command.PersonaId, _validator.ExistsAsync<Persona, PersonaId>(PersonaId.Create(command.PersonaId).Value))
+                        };
 
-        var results = await Task.WhenAll(existenceTasks);
+        await Task.WhenAll(validations.Select(x => x.Task));
 
-        if (results.Any(r => !r))
+        // 4. Si hay fallos, devolvemos el detalle exacto
+        var failedEntities = validations
+           .Where(x => !x.Task.Result) // Aquí ya tenemos el resultado
+           .Select(x => $"{x.Entity}")
+           .ToList();
+
+        // 4. Si hay fallos, devolvemos el detalle exacto
+        if (failedEntities.Any())
         {
-            return Result.Failure<Guid>(
-                Error.NotFound("Una o más entidades referenciadas no existen o el ID es incorrecto."));
+            var msg = $"No se encontraron las siguientes entidades: {string.Join(", ", failedEntities)}";
+            return Result.Failure<Guid>(Error.NotFound(msg));
         }
 
         try

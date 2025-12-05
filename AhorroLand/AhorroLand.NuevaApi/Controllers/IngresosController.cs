@@ -59,7 +59,7 @@ public class IngresosController : AbsController
     public async Task<IActionResult> Create([FromBody] CreateIngresoRequest request)
     {
         // Asignación inteligente de UsuarioId
-        var usuarioId = request.UsuarioId != Guid.Empty ? request.UsuarioId : GetCurrentUserId() ?? Guid.Empty;
+        var userId = GetCurrentUserId();
 
         var command = new CreateIngresoCommand
         {
@@ -72,7 +72,7 @@ public class IngresosController : AbsController
             PersonaId = request.PersonaId,
             CuentaId = request.CuentaId,
             FormaPagoId = request.FormaPagoId,
-            UsuarioId = usuarioId
+            UsuarioId = userId!.Value
         };
 
         var result = await _sender.Send(command);
@@ -122,17 +122,11 @@ public record CreateIngresoRequest(
     DateTime Fecha,
     string? Descripcion,
     Guid CategoriaId,
-    string CategoriaNombre,
     Guid ConceptoId,
-    string ConceptoNombre,
     Guid ClienteId,
-    string ClienteNombre,
     Guid PersonaId,
-    string PersonaNombre,
     Guid CuentaId,
-    string CuentaNombre,
     Guid FormaPagoId,
-    string FormaPagoNombre,
     Guid UsuarioId
 );
 
