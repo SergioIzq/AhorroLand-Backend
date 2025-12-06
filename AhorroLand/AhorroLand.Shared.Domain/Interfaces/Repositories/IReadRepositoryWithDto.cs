@@ -55,6 +55,7 @@ namespace AhorroLand.Shared.Domain.Interfaces.Repositories
             Guid usuarioId,
             string searchTerm,
             int limit = 10,
+            Dictionary<string, object>? extraFilters = null,
             CancellationToken cancellationToken = default);
 
         /// <summary>
@@ -69,6 +70,7 @@ namespace AhorroLand.Shared.Domain.Interfaces.Repositories
         Task<IEnumerable<TDto>> GetRecentAsync(
             Guid usuarioId,
             int limit = 5,
+            Dictionary<string, object>? extraFilters = null,
             CancellationToken cancellationToken = default);
     }
 }

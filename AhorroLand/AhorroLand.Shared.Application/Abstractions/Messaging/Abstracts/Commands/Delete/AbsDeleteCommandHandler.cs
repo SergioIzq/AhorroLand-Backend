@@ -56,9 +56,23 @@ namespace AhorroLand.Shared.Application.Abstractions.Messaging.Abstracts.Command
             // Usar Activator para crear instancia sin constructor público
             var entity = (TEntity)Activator.CreateInstance(typeof(TEntity), true)!;
 
-            // Establecer el ID usando reflexión
+            // 🔥 FIX: Convertir Guid a TId (Value Object) usando CreateFromDatabase
+            var idType = typeof(TId);
+            var createFromDatabaseMethod = idType.GetMethod("CreateFromDatabase",
+     System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static);
+
+            if (createFromDatabaseMethod == null)
+            {
+                throw new InvalidOperationException(
+        $"El tipo {idType.Name} debe tener un método estático 'CreateFromDatabase(Guid value)'");
+            }
+
+            // Invocar CreateFromDatabase(id) para obtener el Value Object
+            var valueObjectId = createFromDatabaseMethod.Invoke(null, new object[] { id });
+
+            // Establecer el ID en la entidad
             var idProperty = typeof(TEntity).GetProperty("Id");
-            idProperty?.SetValue(entity, id);
+            idProperty?.SetValue(entity, valueObjectId);
 
             return entity;
         }

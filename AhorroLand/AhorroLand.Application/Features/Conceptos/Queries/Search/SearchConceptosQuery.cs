@@ -5,13 +5,9 @@ using AhorroLand.Shared.Domain.ValueObjects.Ids;
 
 namespace AhorroLand.Application.Features.Conceptos.Queries.Search;
 
-/// <summary>
-/// Query para búsqueda rápida de conceptos (autocomplete).
-/// </summary>
-public sealed record SearchConceptosQuery : SearchForAutocompleteQuery<Concepto, ConceptoDto, ConceptoId>
+// 1. Añadimos la propiedad CategoriaId aquí
+public sealed record SearchConceptosQuery(string SearchTerm, int Limit = 10)
+    : SearchForAutocompleteQuery<Concepto, ConceptoDto, ConceptoId>(SearchTerm, Limit)
 {
-    public SearchConceptosQuery(string searchTerm, int limit = 10)
-    : base(searchTerm, limit)
-    {
-    }
+    public string? CategoriaId { get; init; }
 }

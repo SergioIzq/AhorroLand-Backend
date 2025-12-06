@@ -7,5 +7,10 @@ namespace AhorroLand.Application.Features.Conceptos.Queries.Recent;
 
 public sealed record GetRecentConceptosQuery : GetRecentQuery<Concepto, ConceptoDto, ConceptoId>
 {
-    public GetRecentConceptosQuery(int limit = 5) : base(limit) { }
+    public GetRecentConceptosQuery(int limit = 5, string? categoriaId = null) : base(limit)
+    {
+        CategoriaId = categoriaId;
+    }
+
+    public string? CategoriaId { get; }
 }

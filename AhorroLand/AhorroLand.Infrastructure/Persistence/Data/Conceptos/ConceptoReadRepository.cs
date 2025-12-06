@@ -11,32 +11,32 @@ namespace AhorroLand.Infrastructure.Persistence.Data.Conceptos
     {
         public ConceptoReadRepository(IDbConnectionFactory dbConnectionFactory)
       : base(dbConnectionFactory, "conceptos")
-   {
+        {
         }
 
-    /// <summary>
-      /// 🔥 Alias de la tabla principal para usar en JOINs.
+        /// <summary>
+        /// 🔥 Alias de la tabla principal para usar en JOINs.
         /// </summary>
         protected override string GetTableAlias()
-      {
+        {
             return "c";
         }
 
- /// <summary>
+        /// <summary>
         /// 🔥 Query de conteo que usa el alias correcto y los JOINs necesarios.
-      /// </summary>
+        /// </summary>
         protected override string BuildCountQuery()
         {
-         return @"SELECT COUNT(*) FROM conceptos c
+            return @"SELECT COUNT(*) FROM conceptos c
 LEFT JOIN categorias cat ON c.id_categoria = cat.id";
         }
 
         /// <summary>
-   /// 🔥 Query específico para Concepto con todas sus columnas incluyendo CategoriaNombre.
-      /// </summary>
+        /// 🔥 Query específico para Concepto con todas sus columnas incluyendo CategoriaNombre.
+        /// </summary>
         protected override string BuildGetByIdQuery()
         {
-        return @"
+            return @"
 SELECT 
     c.id as Id,
     c.nombre as Nombre,
@@ -46,13 +46,13 @@ SELECT
 FROM conceptos c
 LEFT JOIN categorias cat ON c.id_categoria = cat.id
 WHERE c.id = @id";
-    }
+        }
 
-      /// <summary>
+        /// <summary>
         /// 🔥 Query para obtener todos los conceptos con CategoriaNombre.
         /// </summary>
         protected override string BuildGetAllQuery()
-   {
+        {
             return @"
 SELECT 
     c.id as Id,
@@ -62,19 +62,19 @@ SELECT
     c.id_usuario as UsuarioId
 FROM conceptos c
 LEFT JOIN categorias cat ON c.id_categoria = cat.id";
-     }
+        }
 
-    /// <summary>
+        /// <summary>
         /// 🔥 IMPORTANTE: Query para paginación (debe incluir los mismos JOINs).
         /// </summary>
         protected override string BuildGetPagedQuery()
         {
-      return BuildGetAllQuery();
-   }
+            return BuildGetAllQuery();
+        }
 
         /// <summary>
-      /// 🔥 ORDER BY por nombre ascendente.
-/// </summary>
+        /// 🔥 ORDER BY por nombre ascendente.
+        /// </summary>
         protected override string GetDefaultOrderBy()
         {
             return "ORDER BY c.nombre ASC";
@@ -84,16 +84,16 @@ LEFT JOIN categorias cat ON c.id_categoria = cat.id";
         /// 🔥 Columna WHERE para filtrar por usuario (con alias).
         /// </summary>
         protected override string GetUserIdColumn()
-   {
-       return "c.id_usuario";
+        {
+            return "c.id_usuario";
         }
 
         /// <summary>
         /// 🔥 NUEVO: Define las columnas por las que se puede ordenar.
         /// </summary>
         protected override Dictionary<string, string> GetSortableColumns()
-   {
- return new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+        {
+            return new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
    {
                 { "Nombre", "c.nombre" },
   { "CategoriaNombre", "cat.nombre" },
@@ -102,22 +102,22 @@ LEFT JOIN categorias cat ON c.id_categoria = cat.id";
         }
 
         /// <summary>
-      /// 🔥 NUEVO: Define las columnas en las que se puede buscar.
+        /// 🔥 NUEVO: Define las columnas en las que se puede buscar.
         /// </summary>
         protected override List<string> GetSearchableColumns()
         {
-        return new List<string>
+            return new List<string>
       {
       "c.nombre",
          "cat.nombre"
 };
         }
 
-   public async Task<bool> ExistsWithSameNameAsync(Nombre nombre, UsuarioId usuarioId, CancellationToken cancellationToken = default)
-  {
-     using var connection = _dbConnectionFactory.CreateConnection();
+        public async Task<bool> ExistsWithSameNameAsync(Nombre nombre, UsuarioId usuarioId, CancellationToken cancellationToken = default)
+        {
+            using var connection = _dbConnectionFactory.CreateConnection();
 
- const string sql = @"
+            const string sql = @"
 SELECT EXISTS(
     SELECT 1 
     FROM conceptos 
@@ -129,26 +129,26 @@ SELECT EXISTS(
           new { Nombre = nombre.Value, UsuarioId = usuarioId.Value },
            cancellationToken: cancellationToken));
 
-  return exists;
- }
+            return exists;
+        }
 
         public async Task<bool> ExistsWithSameNameExceptAsync(Nombre nombre, UsuarioId usuarioId, Guid excludeId, CancellationToken cancellationToken = default)
         {
-       using var connection = _dbConnectionFactory.CreateConnection();
+            using var connection = _dbConnectionFactory.CreateConnection();
 
-          const string sql = @"
+            const string sql = @"
 SELECT EXISTS(
 SELECT 1 
     FROM conceptos 
     WHERE nombre = @Nombre AND id_usuario = @UsuarioId AND id != @ExcludeId
 ) as Exists";
 
-          var exists = await connection.ExecuteScalarAsync<bool>(
-    new CommandDefinition(sql,
-    new { Nombre = nombre.Value, UsuarioId = usuarioId.Value, ExcludeId = excludeId },
- cancellationToken: cancellationToken));
+            var exists = await connection.ExecuteScalarAsync<bool>(
+      new CommandDefinition(sql,
+      new { Nombre = nombre.Value, UsuarioId = usuarioId.Value, ExcludeId = excludeId },
+   cancellationToken: cancellationToken));
 
- return exists;
+            return exists;
         }
     }
 }

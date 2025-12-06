@@ -463,10 +463,11 @@ namespace AhorroLand.Infrastructure.Persistence.Query
         /// Limita resultados y usa solo columnas necesarias para máxima velocidad.
         /// </summary>
         public virtual async Task<IEnumerable<TReadModel>> SearchForAutocompleteAsync(
-            Guid usuarioId,
-      string searchTerm,
-            int limit = 10,
-       CancellationToken cancellationToken = default)
+                Guid usuarioId,
+                string searchTerm,
+                int limit = 10,
+                Dictionary<string, object>? extraFilters = null, // <--- Nuevo argumento
+                CancellationToken cancellationToken = default)
         {
             using var connection = _dbConnectionFactory.CreateConnection();
 
@@ -477,9 +478,10 @@ namespace AhorroLand.Infrastructure.Persistence.Query
             parameters.Add("usuarioId", usuarioId);
             parameters.Add("limit", limit);
 
-            // Construir cláusula WHERE
+            // Construir cláusula WHERE base
             var whereClauses = new List<string> { $"{userIdColumn} = @usuarioId" };
 
+            // Añadir filtro de búsqueda de texto
             var searchWhereClause = BuildSearchWhereClause(searchTerm ?? string.Empty, parameters);
             if (!string.IsNullOrWhiteSpace(searchWhereClause))
             {
@@ -488,17 +490,22 @@ namespace AhorroLand.Infrastructure.Persistence.Query
 
             var whereClause = $"WHERE {string.Join(" AND ", whereClauses)}";
 
-            // 🚀 OPTIMIZACIÓN: Usar el ORDER BY por defecto + LIMIT para resultados rápidos
+            // Añadir filtros extras dinámicos (Ej: CategoriaId)
+            if (extraFilters != null)
+            {
+                whereClause += BuildDynamicFilters(extraFilters, parameters);
+            }
+
             var orderBy = GetDefaultOrderBy();
 
             var sql = $@"
-{baseQuery}
+        {baseQuery}
         {whereClause}
         {orderBy}
         LIMIT @limit";
 
             return await connection.QueryAsync<TReadModel>(
-            new CommandDefinition(sql, parameters, cancellationToken: cancellationToken));
+                new CommandDefinition(sql, parameters, cancellationToken: cancellationToken));
         }
 
         /// <summary>
@@ -506,9 +513,10 @@ namespace AhorroLand.Infrastructure.Persistence.Query
         /// Ultra-rápido: usa índice en (usuario_id, fecha_creacion).
         /// </summary>
         public virtual async Task<IEnumerable<TReadModel>> GetRecentAsync(
-            Guid usuarioId,
-               int limit = 5,
-         CancellationToken cancellationToken = default)
+                Guid usuarioId,
+                int limit = 5,
+                Dictionary<string, object>? extraFilters = null, // <--- Nuevo argumento
+                CancellationToken cancellationToken = default)
         {
             using var connection = _dbConnectionFactory.CreateConnection();
 
@@ -520,19 +528,25 @@ namespace AhorroLand.Infrastructure.Persistence.Query
             parameters.Add("usuarioId", usuarioId);
             parameters.Add("limit", limit);
 
-            // 🔥 OPTIMIZACIÓN: ORDER BY con alias de tabla para evitar ambigüedad
-            var orderByColumn = string.IsNullOrEmpty(alias)
-          ? "fecha_creacion"
-     : $"{alias}.fecha_creacion";
+            var orderByColumn = string.IsNullOrEmpty(alias) ? "fecha_creacion" : $"{alias}.fecha_creacion";
 
+            // SQL Base
             var sql = $@"
-{baseQuery}
-WHERE {userIdColumn} = @usuarioId
-ORDER BY {orderByColumn} DESC
-LIMIT @limit";
+        {baseQuery}
+        WHERE {userIdColumn} = @usuarioId";
+
+            // Añadir filtros extras dinámicos
+            if (extraFilters != null)
+            {
+                sql += BuildDynamicFilters(extraFilters, parameters);
+            }
+
+            sql += $@"
+        ORDER BY {orderByColumn} DESC
+        LIMIT @limit";
 
             return await connection.QueryAsync<TReadModel>(
-         new CommandDefinition(sql, parameters, cancellationToken: cancellationToken));
+                 new CommandDefinition(sql, parameters, cancellationToken: cancellationToken));
         }
 
         public virtual async Task InvalidateCacheAsync(Guid id, CancellationToken cancellationToken = default)
@@ -544,6 +558,30 @@ LIMIT @limit";
             }
         }
         #endregion
+
+        protected string BuildDynamicFilters(Dictionary<string, object> filters, DynamicParameters parameters)
+        {
+            if (filters == null || filters.Count == 0) return string.Empty;
+
+            var conditions = new List<string>();
+          foreach (var filter in filters)
+ {
+  // Generamos un nombre de parámetro único para evitar colisiones
+                var paramName = $"Filter_{filter.Key.Replace(".", "_")}";
+       conditions.Add($"{filter.Key} = @{paramName}");
+       
+                // 🔥 FIX: Convertir strings que son GUIDs válidos a tipo Guid
+       var paramValue = filter.Value;
+    if (filter.Value is string stringValue && Guid.TryParse(stringValue, out var guidValue))
+  {
+        paramValue = guidValue;
+        }
+  
+                parameters.Add(paramName, paramValue);
+        }
+
+    return " AND " + string.Join(" AND ", conditions);
+        }
     }
 
 }

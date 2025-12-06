@@ -1,4 +1,4 @@
-using AhorroLand.Shared.Application.Abstractions.Servicies;
+ï»¿using AhorroLand.Shared.Application.Abstractions.Servicies;
 using AhorroLand.Shared.Domain.Abstractions;
 using AhorroLand.Shared.Domain.Abstractions.Results;
 using AhorroLand.Shared.Domain.Interfaces;
@@ -7,12 +7,6 @@ using MediatR;
 
 namespace AhorroLand.Shared.Application.Abstractions.Messaging.Abstracts.Queries;
 
-/// <summary>
-/// Handler base para búsquedas de autocomplete ultra-rápidas.
-/// ? Sin cache (los datos cambian frecuentemente y son ligeros)
-/// ? Resultados limitados (máximo 10-50 items)
-/// ? Optimizado para <10ms de respuesta
-/// </summary>
 public abstract class SearchForAutocompleteQueryHandler<TEntity, TDto, TQuery, TId>
     : AbsQueryHandler<TEntity, TId>, IRequestHandler<TQuery, Result<IEnumerable<TDto>>>
     where TEntity : AbsEntity<TId>
@@ -30,26 +24,34 @@ public abstract class SearchForAutocompleteQueryHandler<TEntity, TDto, TQuery, T
         _repository = repository;
     }
 
+    // ðŸ”¥ 1. Hook virtual para filtros personalizados (igual que en GetRecent)
+    protected virtual Dictionary<string, object>? GetCustomFilters(TQuery query)
+    {
+        return null;
+    }
+
     public virtual async Task<Result<IEnumerable<TDto>>> Handle(TQuery query, CancellationToken cancellationToken)
     {
-        // Validación: el término de búsqueda no puede estar vacío
         if (string.IsNullOrWhiteSpace(query.SearchTerm))
         {
             return Result.Success(Enumerable.Empty<TDto>());
         }
 
-        // Validación: debe tener usuarioId
         if (!query.UsuarioId.HasValue)
         {
             return Result.Failure<IEnumerable<TDto>>(
-                Error.Validation("El ID de usuario es requerido para la búsqueda."));
+                Error.Validation("El ID de usuario es requerido para la bÃºsqueda."));
         }
 
-        // ?? Búsqueda ultra-rápida sin cache (datos ligeros y dinámicos)
+        // ðŸ”¥ 2. Obtener filtros personalizados
+        var extraFilters = GetCustomFilters(query);
+
+        // ðŸ”¥ 3. Pasar extraFilters al repositorio
         var results = await _repository.SearchForAutocompleteAsync(
             query.UsuarioId.Value,
             query.SearchTerm,
             query.Limit,
+            extraFilters, // <--- Nuevo parÃ¡metro
             cancellationToken);
 
         return Result.Success(results);

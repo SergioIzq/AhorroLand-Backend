@@ -4,6 +4,7 @@ using AhorroLand.Application.Features.Conceptos.Queries.Recent;
 using AhorroLand.Application.Features.Conceptos.Queries.Search;
 using AhorroLand.NuevaApi.Controllers.Base;
 using AhorroLand.Shared.Domain.Abstractions.Results; // Para Error y Result
+using AhorroLand.Shared.Domain.ValueObjects.Ids;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -49,7 +50,7 @@ public class ConceptosController : AbsController
     /// Búsqueda rápida para autocomplete.
     /// </summary>
     [HttpGet("search")]
-    public async Task<IActionResult> Search([FromQuery] string search, [FromQuery] int limit = 10)
+    public async Task<IActionResult> Search([FromQuery] string search, [FromQuery] int limit = 10, [FromQuery] string? categoriaId = null)
     {
         var usuarioId = GetCurrentUserId();
 
@@ -60,7 +61,8 @@ public class ConceptosController : AbsController
 
         var query = new SearchConceptosQuery(search, limit)
         {
-            UsuarioId = usuarioId.Value
+            UsuarioId = usuarioId.Value,
+            CategoriaId = categoriaId
         };
 
         var result = await _sender.Send(query);
@@ -71,7 +73,7 @@ public class ConceptosController : AbsController
     /// Obtiene los conceptos más recientes.
     /// </summary>
     [HttpGet("recent")]
-    public async Task<IActionResult> GetRecent([FromQuery] int limit = 5)
+    public async Task<IActionResult> GetRecent([FromQuery] int limit = 5, [FromQuery] string? categoriaId = null)
     {
         var usuarioId = GetCurrentUserId();
 
@@ -80,7 +82,7 @@ public class ConceptosController : AbsController
             return Unauthorized(Result.Failure(Error.Unauthorized("Usuario no autenticado")));
         }
 
-        var query = new GetRecentConceptosQuery(limit)
+        var query = new GetRecentConceptosQuery(limit, categoriaId)
         {
             UsuarioId = usuarioId.Value
         };

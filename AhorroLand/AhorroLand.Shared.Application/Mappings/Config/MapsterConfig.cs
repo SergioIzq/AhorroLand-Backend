@@ -46,8 +46,7 @@ public static class MapsterConfig
 
         // Para Descripcion (que puede ser nula), manejamos el null check
         config.NewConfig<Descripcion, string?>()
-              .MapWith(src => src != null ? src._Value : null);
-
+              .MapWith(src => src._Value);
 
         // ---------------------------------------------------------
         // 2. ESCANEO DE REGISTROS (IRegister)
