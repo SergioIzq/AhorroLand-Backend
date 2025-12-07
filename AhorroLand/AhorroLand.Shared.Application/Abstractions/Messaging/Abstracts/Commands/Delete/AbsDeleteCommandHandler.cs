@@ -12,19 +12,20 @@ namespace AhorroLand.Shared.Application.Abstractions.Messaging.Abstracts.Command
     /// Handler genérico para eliminar entidades.
     /// ✅ OPTIMIZADO: Crea un stub de la entidad con solo el ID para DELETE directo.
     /// No carga la entidad completa ni valida existencia (EF Core lanzará DbUpdateConcurrencyException si no existe).
+    /// 🔥 NUEVO: Permite sobrescribir comportamiento para disparar eventos de dominio.
     /// </summary>
     public abstract class DeleteCommandHandler<TEntity, TId, TCommand>
         : AbsCommandHandler<TEntity, TId>, IRequestHandler<TCommand, Result>
         where TEntity : AbsEntity<TId>
-        where TCommand : AbsDeleteCommand<TEntity, TId>
+    where TCommand : AbsDeleteCommand<TEntity, TId>
         where TId : IGuidValueObject
 
     {
         public DeleteCommandHandler(
-                IUnitOfWork unitOfWork,
-                IWriteRepository<TEntity, TId> writeRepository,
+             IUnitOfWork unitOfWork,
+      IWriteRepository<TEntity, TId> writeRepository,
             ICacheService cacheService)
-           : base(unitOfWork, writeRepository, cacheService)
+ : base(unitOfWork, writeRepository, cacheService)
         {
         }
 
@@ -32,10 +33,15 @@ namespace AhorroLand.Shared.Application.Abstractions.Messaging.Abstracts.Command
         {
             try
             {
-                // 1. ✅ Crear una entidad "stub" solo con el ID para eliminar (sin cargar de BD)
-                var entity = CreateEntityStub(command.Id);
+                // 🔥 NUEVO: Permitir que clases derivadas carguen la entidad real si necesitan eventos
+                var entity = await LoadEntityForDeletionAsync(command.Id, cancellationToken);
 
-                // 2. Persistencia: Eliminar, SaveChanges y Cache Invalidation
+                if (entity == null)
+                {
+                    return Result.Failure(Error.NotFound($"Entidad {typeof(TEntity).Name} con ID '{command.Id}' no encontrada para eliminación."));
+                }
+
+                // Persistencia: Eliminar, SaveChanges y Cache Invalidation
                 var result = await DeleteAsync(entity, cancellationToken);
 
                 return result;
@@ -45,6 +51,17 @@ namespace AhorroLand.Shared.Application.Abstractions.Messaging.Abstracts.Command
                 // Si la entidad no existe, EF Core lanza DbUpdateConcurrencyException
                 return Result.Failure(Error.NotFound($"Entidad {typeof(TEntity).Name} con ID '{command.Id}' no encontrada para eliminación."));
             }
+        }
+
+        /// <summary>
+        /// 🔥 NUEVO: Método virtual que permite a clases derivadas cargar la entidad real
+        /// en lugar de usar un stub. Útil cuando se necesita disparar eventos de dominio.
+        /// Por defecto, crea un stub optimizado sin acceso a BD.
+        /// </summary>
+        protected virtual async Task<TEntity?> LoadEntityForDeletionAsync(Guid id, CancellationToken cancellationToken)
+        {
+            // Por defecto: crear stub sin cargar de BD (comportamiento optimizado original)
+            return CreateEntityStub(id);
         }
 
         /// <summary>
@@ -59,12 +76,12 @@ namespace AhorroLand.Shared.Application.Abstractions.Messaging.Abstracts.Command
             // 🔥 FIX: Convertir Guid a TId (Value Object) usando CreateFromDatabase
             var idType = typeof(TId);
             var createFromDatabaseMethod = idType.GetMethod("CreateFromDatabase",
-     System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static);
+            System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static);
 
             if (createFromDatabaseMethod == null)
             {
                 throw new InvalidOperationException(
-        $"El tipo {idType.Name} debe tener un método estático 'CreateFromDatabase(Guid value)'");
+              $"El tipo {idType.Name} debe tener un método estático 'CreateFromDatabase(Guid value)'");
             }
 
             // Invocar CreateFromDatabase(id) para obtener el Value Object

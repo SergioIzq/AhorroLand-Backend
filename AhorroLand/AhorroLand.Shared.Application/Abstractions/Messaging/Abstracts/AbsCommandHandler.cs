@@ -29,14 +29,14 @@ public abstract class AbsCommandHandler<TEntity, TId> : IAbsCommandHandlerBase<T
         IUnitOfWork unitOfWork,
         IWriteRepository<TEntity, TId> writeRepository,
         ICacheService cacheService
-        )
+   )
     {
         _unitOfWork = unitOfWork;
         _writeRepository = writeRepository;
         _cacheService = cacheService;
     }
 
-    // --- Métodos CUD (Create, Update, Delete) ---
+  // --- Métodos CUD (Create, Update, Delete) ---
 
     /// <summary>
     /// Añade la entidad al repositorio y persiste los cambios.
@@ -50,11 +50,12 @@ public abstract class AbsCommandHandler<TEntity, TId> : IAbsCommandHandlerBase<T
 
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-        await InvalidateIndividualCacheAsync(entity.Id.Value);
+        // 🔥 Invalidar caché de la entidad individual y de todas las listas/paginaciones
+        await InvalidateCacheAsync(entity.Id.Value);
 
         return Result.Success(entity.Id.Value);
 
-    }
+  }
 
     /// <summary>
     /// Marca la entidad como modificada y persiste los cambios.
@@ -64,37 +65,45 @@ public abstract class AbsCommandHandler<TEntity, TId> : IAbsCommandHandlerBase<T
     /// <returns>Un Result de éxito si la actualización fue exitosa, o Error.UpdateFailure si falla.</returns>
     public async Task<Result<Guid>> UpdateAsync(TEntity entity, CancellationToken cancellationToken = default)
     {
-        _writeRepository.Update(entity);
+ _writeRepository.Update(entity);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-        await InvalidateIndividualCacheAsync(entity.Id.Value);
+ // 🔥 Invalidar caché de la entidad individual y de todas las listas/paginaciones
+      await InvalidateCacheAsync(entity.Id.Value);
 
         return Result.Success(entity.Id.Value);
     }
 
-    /// <summary>
+  /// <summary>
     /// Marca la entidad para su eliminación y persiste los cambios.
     /// </summary>
     /// <param name="entity">La entidad a eliminar.</param>
-    /// <param name="cancellationToken">Token para monitorear peticiones de cancelación.</param>
+/// <param name="cancellationToken">Token para monitorear peticiones de cancelación.</param>
     /// <returns>Un Result de éxito si la eliminación fue exitosa, o Error.DeleteFailure si falla.</returns>
     public async Task<Result> DeleteAsync(TEntity entity, CancellationToken cancellationToken = default)
     {
         _writeRepository.Delete(entity);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-        await InvalidateIndividualCacheAsync(entity.Id.Value);
+        // 🔥 Invalidar caché de la entidad individual y de todas las listas/paginaciones
+        await InvalidateCacheAsync(entity.Id.Value);
 
-        return Result.Success();
+ return Result.Success();
     }
 
     /// <summary>
-    /// Invalida la clave de caché individual de una entidad modificada o eliminada.
+    /// 🔥 MEJORADO: Invalida todas las claves de caché relacionadas con la entidad.
+    /// Incluye: caché individual, recent, search y cualquier lista paginada.
     /// </summary>
-    protected async Task InvalidateIndividualCacheAsync(Guid id)
+    protected async Task InvalidateCacheAsync(Guid id)
     {
-        // Esta clave debe coincidir exactamente con la clave usada en AbsQueryHandler.GetByIdAsync
-        string cacheKey = $"{typeof(TEntity).Name}:{id}";
-        await _cacheService.RemoveAsync(cacheKey);
+    var entityName = typeof(TEntity).Name;
+ 
+      // 1. Invalidar caché individual
+        await _cacheService.RemoveAsync($"{entityName}:{id}");
+  
+        // 2. 🔥 MEJORADO: Invalidar TODAS las claves que empiecen con el nombre de la entidad
+        // Esto incluye: paginaciones, búsquedas, listas, etc.
+ await _cacheService.InvalidateByPatternAsync($"*{entityName}*");
     }
 }
