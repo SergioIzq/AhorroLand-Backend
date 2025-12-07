@@ -8,7 +8,7 @@ namespace AhorroLand.Infrastructure.Persistence.Data.GastosProgramados
     public class GastoProgramadoReadRepository : AbsReadRepository<GastoProgramado, GastoProgramadoDto, GastoProgramadoId>, IGastoProgramadoReadRepository
     {
         public GastoProgramadoReadRepository(IDbConnectionFactory dbConnectionFactory)
-            : base(dbConnectionFactory, "gastosProgramados")
+            : base(dbConnectionFactory, "gastos_programados")
         {
         }
 

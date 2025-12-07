@@ -8,7 +8,7 @@ namespace AhorroLand.Infrastructure.Persistence.Data.IngresosProgramados
     public class IngresoProgramadoReadRepository : AbsReadRepository<IngresoProgramado, IngresoProgramadoDto, IngresoProgramadoId>, IIngresoProgramadoReadRepository
     {
         public IngresoProgramadoReadRepository(IDbConnectionFactory dbConnectionFactory)
-            : base(dbConnectionFactory, "ingresosProgramados")
+            : base(dbConnectionFactory, "ingresos_programados")
         {
         }
 
