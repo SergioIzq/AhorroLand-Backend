@@ -74,9 +74,7 @@ public sealed class ExecuteGastoProgramadoCommandHandler : ICommandHandler<Execu
                 FormaPagoId = gastoProgramado.FormaPagoId,
                 UsuarioId = gastoProgramado.UsuarioId,
                 // ?? OPTIMIZACIÓN: Evitar string interpolation si no es necesario
-                Descripcion = !string.IsNullOrEmpty(descripcion)
-                    ? descripcion
-                    : $"Gasto automático desde programación {gastoProgramado.Id}"
+                Descripcion = gastoProgramado.Descripcion
             };
 
             var result = await _mediator.Send(createGastoCommand, cancellationToken);

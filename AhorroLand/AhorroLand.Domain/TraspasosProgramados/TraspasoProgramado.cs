@@ -97,6 +97,61 @@ public sealed class TraspasoProgramado : AbsEntity<TraspasoProgramadoId>
     // --- Comportamientos del dominio ---
 
     /// <summary>
+    /// Actualiza todos los datos del traspaso programado.
+    /// 🔥 Dispara evento de dominio si cambian las cuentas o el importe.
+    /// </summary>
+    public Result Update(
+        CuentaId cuentaOrigenId,
+        CuentaId cuentaDestinoId,
+        Cantidad importe,
+        DateTime fechaEjecucion,
+        Frecuencia frecuencia,
+        bool activo,
+        Descripcion? descripcion = null)
+    {
+        // Validaciones
+        if (cuentaOrigenId == cuentaDestinoId)
+            return Result.Failure(Error.Validation("La cuenta de origen y destino no pueden ser la misma."));
+
+        if (importe.Valor <= 0)
+            return Result.Failure(Error.Validation("El importe debe ser mayor a cero."));
+
+        if (fechaEjecucion < DateTime.Today)
+            return Result.Failure(Error.Validation("La fecha de ejecución debe ser futura."));
+
+        // 🔥 Guardar valores anteriores para el evento
+        var cuentaOrigenAnterior = CuentaOrigenId;
+        var cuentaDestinoAnterior = CuentaDestinoId;
+        var importeAnterior = Importe;
+
+        // Actualizar propiedades
+        CuentaOrigenId = cuentaOrigenId;
+        CuentaDestinoId = cuentaDestinoId;
+        Importe = importe;
+        FechaEjecucion = fechaEjecucion;
+        Frecuencia = frecuencia;
+        Activo = activo;
+        Descripcion = descripcion;
+
+        // 🔥 Lanzar evento solo si cambió alguna cuenta o el importe
+        if (!cuentaOrigenAnterior.Equals(cuentaOrigenId) ||
+            !cuentaDestinoAnterior.Equals(cuentaDestinoId) ||
+            !importeAnterior.Equals(importe))
+        {
+            AddDomainEvent(new TraspasoProgramadoActualizadoEvent(
+                Id,
+                cuentaOrigenAnterior,
+                cuentaDestinoAnterior,
+                importeAnterior,
+                cuentaOrigenId,
+                cuentaDestinoId,
+                importe));
+        }
+
+        return Result.Success();
+    }
+
+    /// <summary>
     /// Reprograma el traspaso para una nueva fecha o frecuencia.
     /// </summary>
     public Result Reprogramar(DateTime nuevaFecha, Frecuencia nuevaFrecuencia)
@@ -117,6 +172,20 @@ public sealed class TraspasoProgramado : AbsEntity<TraspasoProgramadoId>
     public void Desactivar()
     {
         Activo = false;
+    }
+
+    /// <summary>
+    /// Marca el traspaso programado como eliminado y lanza el evento de dominio.
+    /// 🔥 Dispara TraspasoProgramadoEliminadoEvent.
+    /// </summary>
+    public void MarkAsDeleted()
+    {
+        // 🔥 Lanzar evento de dominio cuando se elimina
+        AddDomainEvent(new TraspasoProgramadoEliminadoEvent(
+            Id,
+            CuentaOrigenId,
+            CuentaDestinoId,
+            Importe));
     }
 
     /// <summary>

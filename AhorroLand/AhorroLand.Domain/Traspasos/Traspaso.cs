@@ -21,8 +21,7 @@ public sealed class Traspaso : AbsEntity<TraspasoId>
         Cantidad importe,
         FechaRegistro fecha,
         UsuarioId usuarioId,
-        Descripcion? descripcion,
-        bool activo) : base(id)
+        Descripcion? descripcion) : base(id)
     {
         CuentaOrigenId = cuentaOrigen;
         CuentaDestinoId = cuentaDestino;
@@ -30,7 +29,6 @@ public sealed class Traspaso : AbsEntity<TraspasoId>
         Fecha = fecha;
         UsuarioId = usuarioId;
         Descripcion = descripcion;
-        Activo = activo;
     }
 
 
@@ -40,7 +38,6 @@ public sealed class Traspaso : AbsEntity<TraspasoId>
     public Cantidad Importe { get; private set; }
     public FechaRegistro Fecha { get; private set; }
     public UsuarioId UsuarioId { get; private set; }
-    public bool Activo { get; private set; } = true;
 
     public Cuenta CuentaOrigen { get; private set; } = null!;
     public Cuenta CuentaDestino { get; private set; } = null!;
@@ -53,8 +50,7 @@ public sealed class Traspaso : AbsEntity<TraspasoId>
         Cantidad importe,
         FechaRegistro fecha,
     UsuarioId usuarioId,
-    Descripcion? descripcion,
-    bool activo
+    Descripcion? descripcion
     )
     {
         // ⭐ Única validación de dominio intrínseca del Traspaso:
@@ -70,8 +66,7 @@ public sealed class Traspaso : AbsEntity<TraspasoId>
             importe,
        fecha,
            usuarioId,
-        descripcion,
-        activo);
+        descripcion);
 
         // 🔥 Lanzar evento de dominio cuando se crea un traspaso
         traspaso.AddDomainEvent(new TraspasoCreadoEvent(
@@ -107,8 +102,6 @@ cuentaDestino,
         Importe = importe;
         Fecha = fecha;
         Descripcion = descripcion;
-        Activo = activo;
-
         // 🔥 Lanzar evento solo si cambió alguna cuenta o el importe
         if (!cuentaOrigenAnterior.Equals(cuentaOrigen) ||
             !cuentaDestinoAnterior.Equals(cuentaDestino) ||

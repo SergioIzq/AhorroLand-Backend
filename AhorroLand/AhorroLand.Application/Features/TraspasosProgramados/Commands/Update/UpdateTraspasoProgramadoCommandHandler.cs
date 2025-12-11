@@ -5,6 +5,7 @@ using AhorroLand.Shared.Application.Dtos;
 using AhorroLand.Shared.Application.Interfaces;
 using AhorroLand.Shared.Domain.Interfaces;
 using AhorroLand.Shared.Domain.Interfaces.Repositories;
+using AhorroLand.Shared.Domain.ValueObjects;
 using AhorroLand.Shared.Domain.ValueObjects.Ids;
 
 namespace AhorroLand.Application.Features.TraspasosProgramados.Commands;
@@ -25,9 +26,30 @@ public sealed class UpdateTraspasoProgramadoCommandHandler
 
     protected override void ApplyChanges(TraspasoProgramado entity, UpdateTraspasoProgramadoCommand command)
     {
-        // Nota: Si la entidad TraspasoProgramado tiene un método Reprogramar,
-        // debería usarse aquí. De lo contrario, esta implementación debe agregarse.
-        throw new NotSupportedException("La actualización de traspasos programados requiere implementación en el modelo de dominio.");
+        // Crear Value Objects desde el command
+        var cuentaOrigenId = CuentaId.Create(command.CuentaOrigenId).Value;
+        var cuentaDestinoId = CuentaId.Create(command.CuentaDestinoId).Value;
+        var importe = Cantidad.Create(command.Importe).Value;
+        var frecuencia = Frecuencia.Create(command.Frecuencia).Value;
+        var descripcion = string.IsNullOrEmpty(command.Descripcion)
+            ? (Descripcion?)null
+            : new Descripcion(command.Descripcion);
+
+        // 🔥 Llamar al método Update de la entidad que dispara el evento
+        var result = entity.Update(
+            cuentaOrigenId,
+            cuentaDestinoId,
+            importe,
+            command.FechaEjecucion,
+            frecuencia,
+            command.Activo,
+            descripcion);
+
+        // Si hay error, lanzar excepción para que AbsUpdateCommandHandler lo capture
+        if (result.IsFailure)
+        {
+            throw new InvalidOperationException(result.Error.Message);
+        }
     }
 }
 

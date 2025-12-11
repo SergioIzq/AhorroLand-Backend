@@ -14,4 +14,5 @@ public sealed record CreateTraspasoProgramadoCommand : AbsCreateCommand<Traspaso
     public required string Frecuencia { get; init; }
     public required Guid UsuarioId { get; init; }
     public string? Descripcion { get; init; }
+    public bool Activo { get; init; }
 }

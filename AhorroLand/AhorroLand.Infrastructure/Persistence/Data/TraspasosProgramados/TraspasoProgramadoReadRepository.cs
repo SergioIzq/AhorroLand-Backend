@@ -36,8 +36,7 @@ namespace AhorroLand.Infrastructure.Persistence.Data.TraspasoProgramados
                     tp.fecha_creacion as FechaCreacion
                 FROM traspasos_programados tp
                 LEFT JOIN cuentas co ON tp.id_cuenta_origen = co.id
-                LEFT JOIN cuentas cd ON tp.id_cuenta_destino = cd.id
-                WHERE tp.id = @id";
+                LEFT JOIN cuentas cd ON tp.id_cuenta_destino = cd.id";
         }
 
         protected override string BuildGetAllQuery()

@@ -11,7 +11,7 @@ namespace AhorroLand.Infrastructure.Persistence.Command.Configurations.Configura
     {
         public void Configure(EntityTypeBuilder<Traspaso> builder)
         {
-            builder.ToTable("Traspasos");
+            builder.ToTable("traspasos");
             builder.HasKey(e => e.Id);
             builder.Property(e => e.Id).HasColumnName("id").ValueGeneratedOnAdd().HasConversion(
                 id => id.Value,

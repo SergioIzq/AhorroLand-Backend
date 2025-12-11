@@ -15,4 +15,5 @@ public sealed record UpdateTraspasoProgramadoCommand : AbsUpdateCommand<Traspaso
     public required Guid UsuarioId { get; init; }
     public required string HangfireJobId { get; init; }
     public string? Descripcion { get; init; }
+    public bool Activo { get; init; }
 }

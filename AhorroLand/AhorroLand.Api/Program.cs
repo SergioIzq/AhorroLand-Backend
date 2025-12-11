@@ -1,6 +1,7 @@
 ﻿using AhorroLand.Application;
 using AhorroLand.FicheroLog;
 using AhorroLand.FicheroLog.Configuration;
+using AhorroLand.FicheroLog.Formatters;
 using AhorroLand.Infrastructure;
 using AhorroLand.Infrastructure.Configuration;
 using AhorroLand.Infrastructure.TypesHandlers;
@@ -30,23 +31,23 @@ try
 {
     var builder = WebApplication.CreateSlimBuilder(args);
 
-    // 🔥 SERILOG
-    builder.Host.UseSerilog((context, services, configuration) =>
-    {
-        var htmlLogOptions = new HtmlFileLogOptions();
-        context.Configuration.GetSection("HtmlFileLog").Bind(htmlLogOptions);
+    Log.Logger = new LoggerConfiguration()
+        .MinimumLevel.Information()
+        .WriteTo.File(
+            // 1. Usamos TU formateador (para pintar cada log como HTML)
+            formatter: new HtmlLogFormatter(),
 
-        configuration
-            .ReadFrom.Configuration(context.Configuration)
-            .ReadFrom.Services(services)
-            .Enrich.FromLogContext()
-            .Enrich.WithProperty("Environment", context.HostingEnvironment.EnvironmentName)
-            .Enrich.WithProperty("MachineName", Environment.MachineName)
-            .Enrich.WithProperty("ProcessId", Environment.ProcessId);
+            path: "logs/log.html",
 
-        // Agregar sink HTML
-        configuration.WriteTo.WriteToHtmlFile(htmlLogOptions);
-    });
+            // 2. Importante: RollingInterval para que cree un archivo nuevo cada día/hora
+            rollingInterval: RollingInterval.Day,
+
+            // 3. Usamos TUS hooks (para pintar la cabecera, estilos y scripts al crear archivo)
+            hooks: new HtmlLogHooks("AhorroLand Logs")
+        )
+        .CreateLogger();
+
+    builder.Host.UseSerilog();
 
     // 🔥 KESTREL (HTTP/3)
     builder.WebHost.ConfigureKestrel(options =>
