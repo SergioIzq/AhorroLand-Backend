@@ -5,7 +5,6 @@ using AhorroLand.Shared.Domain.Results;
 using Dapper;
 using Microsoft.Extensions.Caching.Distributed;
 using System.Text.Json;
-using AhorroLand.Shared.Domain.ValueObjects.Ids;
 
 namespace AhorroLand.Infrastructure.Persistence.Query
 {
@@ -188,6 +187,7 @@ namespace AhorroLand.Infrastructure.Persistence.Query
 
         /// <summary>
         /// 🔥 MEJORADO: Construye la cláusula WHERE para la búsqueda con soporte para texto, números y fechas.
+        /// ⚠️ IMPORTANTE: Excluye automáticamente columnas que contengan 'id' para evitar búsquedas en GUIDs.
         /// </summary>
         protected virtual string BuildSearchWhereClause(string searchTerm, DynamicParameters parameters)
         {
@@ -199,7 +199,11 @@ namespace AhorroLand.Infrastructure.Persistence.Query
             var conditions = new List<string>();
 
             // 1. Búsqueda en columnas de TEXTO (usa LIKE)
-            var textColumns = GetSearchableColumns();
+            // 🔥 FIX: Filtrar columnas que contengan 'id' para evitar búsquedas en GUIDs
+            var textColumns = GetSearchableColumns()
+                .Where(col => !col.Contains("id", StringComparison.OrdinalIgnoreCase))
+                .ToList();
+
             if (textColumns.Count > 0)
             {
                 var textConditions = textColumns.Select(col => $"{col} LIKE @SearchTerm");
@@ -208,7 +212,11 @@ namespace AhorroLand.Infrastructure.Persistence.Query
             }
 
             // 2. Búsqueda en columnas NUMÉRICAS (usa comparación exacta o conversión a string)
-            var numericColumns = GetNumericSearchableColumns();
+            // 🔥 FIX: Filtrar columnas que contengan 'id' para evitar búsquedas en IDs numéricos
+            var numericColumns = GetNumericSearchableColumns()
+                .Where(col => !col.Contains("id", StringComparison.OrdinalIgnoreCase))
+                .ToList();
+
             if (numericColumns.Count > 0 && decimal.TryParse(searchTerm, out var numericValue))
             {
                 foreach (var col in numericColumns)
@@ -572,23 +580,23 @@ namespace AhorroLand.Infrastructure.Persistence.Query
             if (filters == null || filters.Count == 0) return string.Empty;
 
             var conditions = new List<string>();
-          foreach (var filter in filters)
- {
-  // Generamos un nombre de parámetro único para evitar colisiones
+            foreach (var filter in filters)
+            {
+                // Generamos un nombre de parámetro único para evitar colisiones
                 var paramName = $"Filter_{filter.Key.Replace(".", "_")}";
-       conditions.Add($"{filter.Key} = @{paramName}");
-       
-                // 🔥 FIX: Convertir strings que son GUIDs válidos a tipo Guid
-       var paramValue = filter.Value;
-    if (filter.Value is string stringValue && Guid.TryParse(stringValue, out var guidValue))
-  {
-        paramValue = guidValue;
-        }
-  
-                parameters.Add(paramName, paramValue);
-        }
+                conditions.Add($"{filter.Key} = @{paramName}");
 
-    return " AND " + string.Join(" AND ", conditions);
+                // 🔥 FIX: Convertir strings que son GUIDs válidos a tipo Guid
+                var paramValue = filter.Value;
+                if (filter.Value is string stringValue && Guid.TryParse(stringValue, out var guidValue))
+                {
+                    paramValue = guidValue;
+                }
+
+                parameters.Add(paramName, paramValue);
+            }
+
+            return " AND " + string.Join(" AND ", conditions);
         }
     }
 

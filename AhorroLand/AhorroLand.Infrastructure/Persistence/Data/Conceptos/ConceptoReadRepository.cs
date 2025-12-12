@@ -122,7 +122,7 @@ SELECT EXISTS(
     SELECT 1 
     FROM conceptos 
     WHERE nombre = @Nombre AND id_usuario = @UsuarioId
-) as Exists";
+) as ItemExists";
 
             var exists = await connection.ExecuteScalarAsync<bool>(
    new CommandDefinition(sql,
@@ -141,7 +141,7 @@ SELECT EXISTS(
 SELECT 1 
     FROM conceptos 
     WHERE nombre = @Nombre AND id_usuario = @UsuarioId AND id != @ExcludeId
-) as Exists";
+) as ItemExists";
 
             var exists = await connection.ExecuteScalarAsync<bool>(
       new CommandDefinition(sql,

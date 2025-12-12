@@ -42,13 +42,13 @@ public sealed class LogCleanupService
                 cancellationToken.ThrowIfCancellationRequested();
 
                 var fileInfo = new FileInfo(file);
-                
+
                 if (fileInfo.CreationTimeUtc < cutoffDate)
                 {
                     totalSize += fileInfo.Length;
                     File.Delete(file);
                     deletedCount++;
-                    
+
                     _logger.LogInformation(
                         "Archivo de log eliminado: {FileName}, Tamaño: {Size} bytes, Fecha: {Date}",
                         fileInfo.Name,
@@ -97,7 +97,7 @@ public sealed class LogCleanupService
             foreach (var file in files)
             {
                 cancellationToken.ThrowIfCancellationRequested();
-                
+
                 File.Delete(file);
                 deletedCount++;
             }

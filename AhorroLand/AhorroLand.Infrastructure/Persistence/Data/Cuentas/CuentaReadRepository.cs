@@ -87,7 +87,7 @@ saldo as Saldo,
           SELECT 1 
    FROM cuentas 
        WHERE nombre = @Nombre AND id_usuario = @UsuarioId
- ) as Exists";
+ ) as ItemExists";
 
         var exists = await connection.ExecuteScalarAsync<bool>(
             new CommandDefinition(sql,

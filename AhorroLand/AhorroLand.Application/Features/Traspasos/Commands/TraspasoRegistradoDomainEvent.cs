@@ -1,7 +1,6 @@
 ﻿using AhorroLand.Application.Interfaces;
 using AhorroLand.Domain;
 using AhorroLand.Domain.Traspasos.Eventos;
-using AhorroLand.Shared.Application.Dtos;
 using AhorroLand.Shared.Domain.Interfaces.Repositories;
 using AhorroLand.Shared.Domain.ValueObjects.Ids;
 

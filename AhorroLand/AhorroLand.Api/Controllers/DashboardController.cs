@@ -5,7 +5,6 @@ using AhorroLand.Shared.Domain.Abstractions.Results; // Para Result y Error
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.OutputCaching;
 
 namespace AhorroLand.NuevaApi.Controllers;
 

@@ -13,7 +13,6 @@ using AhorroLand.Shared.Domain.Abstractions.Results; // Para Result
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Org.BouncyCastle.Asn1.Ocsp;
 
 namespace AhorroLand.NuevaApi.Controllers;
 

@@ -1,5 +1,7 @@
 ﻿using AhorroLand.Domain;
+using AhorroLand.Domain.Errors;
 using AhorroLand.Infrastructure.Persistence.Command;
+using AhorroLand.Shared.Domain.Abstractions.Results;
 using AhorroLand.Shared.Domain.ValueObjects.Ids;
 
 namespace AhorroLand.Infrastructure.Persistence.Data.Cuentas
@@ -15,8 +17,9 @@ namespace AhorroLand.Infrastructure.Persistence.Data.Cuentas
             _readRepository = readRepository;
         }
 
-        public override async Task CreateAsync(Cuenta entity, CancellationToken cancellationToken = default)
+        public async Task<Result> CreateAsyncWithValidation(Cuenta entity, CancellationToken cancellationToken = default)
         {
+            // 1. Validar duplicados
             var exists = await _readRepository.ExistsWithSameNameAsync(
                 entity.Nombre,
                 entity.UsuarioId,
@@ -24,29 +27,33 @@ namespace AhorroLand.Infrastructure.Persistence.Data.Cuentas
 
             if (exists)
             {
-                throw new InvalidOperationException(
-                    $"Ya existe una cuenta con el nombre '{entity.Nombre.Value}' para este usuario.");
+                return Result.Failure(CuentaErrors.NombreDuplicado(entity.Nombre.Value));
             }
 
+            // 2. Agregar al contexto
             await base.CreateAsync(entity, cancellationToken);
+
+            return Result.Success();
         }
 
-        public override async void Update(Cuenta entity)
+        public async Task<Result> UpdateAsync(Cuenta entity, CancellationToken cancellationToken = default)
         {
-            // Primero verificar que la entidad existe (validación del base)
-            base.Update(entity);
-
-            // Luego validar duplicados
+            // 1. Validar duplicados (excepto la propia entidad)
             var exists = await _readRepository.ExistsWithSameNameExceptAsync(
                 entity.Nombre,
                 entity.UsuarioId,
-                entity.Id.Value);
+                entity.Id.Value,
+                cancellationToken);
 
             if (exists)
             {
-                throw new InvalidOperationException(
-                    $"Ya existe otra cuenta con el nombre '{entity.Nombre.Value}' para este usuario.");
+                return Result.Failure(CuentaErrors.NombreDuplicado(entity.Nombre.Value));
             }
+
+            // 2. Marcar como modificado
+            base.Update(entity);
+
+            return Result.Success();
         }
     }
 }

@@ -5,7 +5,6 @@ using AhorroLand.Shared.Domain.Abstractions.Results; // Para Error y Result
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.OutputCaching;
 
 namespace AhorroLand.NuevaApi.Controllers;
 
@@ -21,25 +20,26 @@ public class IngresosController : AbsController
     /// <summary>
     /// Obtiene una lista paginada de ingresos con soporte para búsqueda y ordenamiento.
     /// </summary>
-    [HttpGet] // Estandarizado a la raíz (GET /api/ingresos)
-    public async Task<IActionResult> GetAll(
+    [HttpGet]
+    public async Task<IActionResult> GetPagedList(
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 10,
-        [FromQuery] string? searchTerm = null,
-        [FromQuery] string? sortColumn = null,
-        [FromQuery] string? sortOrder = null)
+        [FromQuery] string searchTerm = "",
+        [FromQuery] string sortColumn = "",
+        [FromQuery] string sortOrder = "")
     {
-        // 1. Obtener ID del usuario de forma segura
+        // ✅ OPTIMIZACIÓN: Usamos el helper de la clase base
         var usuarioId = GetCurrentUserId();
 
         if (usuarioId is null)
         {
+            // Retornamos un 401 usando el formato estandarizado
             return Unauthorized(Result.Failure(Error.Unauthorized("Usuario no autenticado")));
         }
 
         var query = new GetIngresosPagedListQuery(page, pageSize, searchTerm, sortColumn, sortOrder)
         {
-            UsuarioId = usuarioId.Value // 👈 Asignación crítica para seguridad
+            UsuarioId = usuarioId.Value
         };
 
         var result = await _sender.Send(query);
@@ -87,6 +87,8 @@ public class IngresosController : AbsController
     [HttpPut("{id}")]
     public async Task<IActionResult> Update(Guid id, [FromBody] UpdateIngresoRequest request)
     {
+        var userId = GetCurrentUserId();
+
         var command = new UpdateIngresoCommand
         {
             Id = id,
@@ -99,7 +101,7 @@ public class IngresosController : AbsController
             PersonaId = request.PersonaId,
             CuentaId = request.CuentaId,
             FormaPagoId = request.FormaPagoId,
-            UsuarioId = request.UsuarioId // Nota: Validar si permites cambiar de dueño en el handler
+            UsuarioId = userId!.Value
         };
 
         var result = await _sender.Send(command);
@@ -138,6 +140,5 @@ public record UpdateIngresoRequest(
     Guid ClienteId,
     Guid PersonaId,
     Guid CuentaId,
-    Guid FormaPagoId,
-    Guid UsuarioId
+    Guid FormaPagoId
 );

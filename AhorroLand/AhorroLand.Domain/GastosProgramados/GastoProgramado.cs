@@ -158,4 +158,17 @@ public sealed class GastoProgramado : AbsEntity<GastoProgramadoId>
     {
         Activo = true;
     }
+
+    /// <summary>
+    /// Marca el gasto programado como eliminado y lanza el evento de dominio.
+    /// 🔥 Dispara GastoProgramadoEliminadoEvent.
+    /// </summary>
+    public void MarkAsDeleted()
+    {
+        // 🔥 Lanzar evento de dominio cuando se elimina
+        AddDomainEvent(new GastoProgramadoEliminadoEvent(
+            Id,
+            CuentaId,
+            Importe));
+    }
 }

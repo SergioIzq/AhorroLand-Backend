@@ -14,7 +14,7 @@ namespace AhorroLand.Infrastructure.TypesHandlers
             SqlMapper.AddTypeHandler(new GuidValueObjectTypeHandler<UsuarioId>(g => UsuarioId.Create(g).Value));
             SqlMapper.AddTypeHandler(new GuidValueObjectTypeHandler<ClienteId>(g => ClienteId.Create(g).Value));
             SqlMapper.AddTypeHandler(new GuidValueObjectTypeHandler<CategoriaId>(g => CategoriaId.Create(g).Value));
-            SqlMapper.AddTypeHandler(new GuidValueObjectTypeHandler<ConceptoId>(g => ConceptoId.Create(g).Value ));
+            SqlMapper.AddTypeHandler(new GuidValueObjectTypeHandler<ConceptoId>(g => ConceptoId.Create(g).Value));
             SqlMapper.AddTypeHandler(new GuidValueObjectTypeHandler<CuentaId>(g => CuentaId.Create(g).Value));
             SqlMapper.AddTypeHandler(new GuidValueObjectTypeHandler<FormaPagoId>(g => FormaPagoId.Create(g).Value));
             SqlMapper.AddTypeHandler(new GuidValueObjectTypeHandler<PersonaId>(g => PersonaId.Create(g).Value));

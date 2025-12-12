@@ -28,5 +28,5 @@ public readonly record struct GastoId : IGuidValueObject
         return Result.Success(new GastoId(value));
     }
 
-    public static GastoId CreateFromDatabase(Guid value) => new (value);
+    public static GastoId CreateFromDatabase(Guid value) => new(value);
 }

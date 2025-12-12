@@ -11,7 +11,7 @@ namespace AhorroLand.Infrastructure.Persistence.Data.IngresosProgramados
             : base(dbConnectionFactory, "ingresos_programados")
         {
         }
-        
+
         protected override string GetTableAlias() => "ip";
 
         protected override string BuildCountQuery()

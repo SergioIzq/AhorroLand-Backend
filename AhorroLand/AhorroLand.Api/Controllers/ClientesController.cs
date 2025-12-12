@@ -7,7 +7,6 @@ using AhorroLand.Shared.Domain.Abstractions.Results; // Para Error
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.OutputCaching;
 
 namespace AhorroLand.NuevaApi.Controllers;
 
@@ -25,7 +24,7 @@ public class ClientesController : AbsController
     /// Cacheada por 30s.
     /// </summary>
     [HttpGet]
-    public async Task<IActionResult> GetAll([FromQuery] int page = 1, [FromQuery] int pageSize = 10)
+    public async Task<IActionResult> GetAll([FromQuery] int page = 1, [FromQuery] int pageSize = 10, [FromQuery] string searchTerm = "", [FromQuery] string sortColumn = "", [FromQuery] string sortOrder = "")
     {
         // ✅ OPTIMIZACIÓN: Usamos el helper de la clase base
         var usuarioId = GetCurrentUserId();
@@ -36,7 +35,7 @@ public class ClientesController : AbsController
             return Unauthorized(Result.Failure(Error.Unauthorized("Usuario no autenticado")));
         }
 
-        var query = new GetClientesPagedListQuery(page, pageSize)
+        var query = new GetClientesPagedListQuery(page, pageSize, searchTerm, sortColumn, sortOrder)
         {
             UsuarioId = usuarioId.Value
         };

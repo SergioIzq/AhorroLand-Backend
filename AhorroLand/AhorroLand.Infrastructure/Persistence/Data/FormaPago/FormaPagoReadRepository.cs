@@ -8,18 +8,18 @@ using Dapper;
 namespace AhorroLand.Infrastructure.Persistence.Data.FormasPago
 {
     public class FormaPagoReadRepository : AbsReadRepository<FormaPago, FormaPagoDto, FormaPagoId>, IFormaPagoReadRepository
-  {
-   public FormaPagoReadRepository(IDbConnectionFactory dbConnectionFactory)
-        : base(dbConnectionFactory, "formas_pago")
-     {
-   }
-
-/// <summary>
-   /// 🔥 Query específico para FormaPago con todas sus columnas.
-        /// </summary>
- protected override string BuildGetByIdQuery()
+    {
+        public FormaPagoReadRepository(IDbConnectionFactory dbConnectionFactory)
+             : base(dbConnectionFactory, "formas_pago")
         {
-     return @"
+        }
+
+        /// <summary>
+        /// 🔥 Query específico para FormaPago con todas sus columnas.
+        /// </summary>
+        protected override string BuildGetByIdQuery()
+        {
+            return @"
    SELECT 
             id as Id,
   nombre as Nombre,
@@ -29,87 +29,87 @@ namespace AhorroLand.Infrastructure.Persistence.Data.FormasPago
          WHERE id = @id";
         }
 
-  /// <summary>
+        /// <summary>
         /// 🔥 Query para obtener todas las formas de pago.
-  /// </summary>
-   protected override string BuildGetAllQuery()
-   {
-return @"
+        /// </summary>
+        protected override string BuildGetAllQuery()
+        {
+            return @"
        SELECT 
          id as Id,
  nombre as Nombre,
         id_usuario as UsuarioId,
      fecha_creacion as FechaCreacion
    FROM formas_pago";
- }
+        }
 
-    /// <summary>
+        /// <summary>
         /// 🔥 ORDER BY por nombre ascendente.
         /// </summary>
-   protected override string GetDefaultOrderBy()
+        protected override string GetDefaultOrderBy()
         {
-  return "ORDER BY nombre ASC";
-      }
+            return "ORDER BY nombre ASC";
+        }
 
         /// <summary>
         /// 🔥 NUEVO: Define las columnas por las que se puede ordenar.
- /// </summary>
-  protected override Dictionary<string, string> GetSortableColumns()
-  {
-      return new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+        /// </summary>
+        protected override Dictionary<string, string> GetSortableColumns()
+        {
+            return new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
             {
             { "Nombre", "nombre" },
 { "FechaCreacion", "fecha_creacion" }
        };
         }
 
-  /// <summary>
+        /// <summary>
         /// 🔥 NUEVO: Define las columnas en las que se puede buscar.
-   /// </summary>
-  protected override List<string> GetSearchableColumns()
- {
- return new List<string>
+        /// </summary>
+        protected override List<string> GetSearchableColumns()
+        {
+            return new List<string>
       {
     "nombre"
  };
         }
 
-   public async Task<bool> ExistsWithSameNameAsync(Nombre nombre, UsuarioId usuarioId, CancellationToken cancellationToken = default)
- {
-   using var connection = _dbConnectionFactory.CreateConnection();
+        public async Task<bool> ExistsWithSameNameAsync(Nombre nombre, UsuarioId usuarioId, CancellationToken cancellationToken = default)
+        {
+            using var connection = _dbConnectionFactory.CreateConnection();
 
- const string sql = @"
+            const string sql = @"
           SELECT EXISTS(
    SELECT 1 
       FROM formas_pago 
       WHERE nombre = @Nombre AND id_usuario = @UsuarioId
-   ) as Exists";
+   ) as ItemExists";
 
-       var exists = await connection.ExecuteScalarAsync<bool>(
-       new CommandDefinition(sql,
-       new { Nombre = nombre.Value, UsuarioId = usuarioId.Value },
-      cancellationToken: cancellationToken));
+            var exists = await connection.ExecuteScalarAsync<bool>(
+            new CommandDefinition(sql,
+            new { Nombre = nombre.Value, UsuarioId = usuarioId.Value },
+           cancellationToken: cancellationToken));
 
-     return exists;
+            return exists;
         }
 
-      public async Task<bool> ExistsWithSameNameExceptAsync(Nombre nombre, UsuarioId usuarioId, Guid excludeId, CancellationToken cancellationToken = default)
-{
-       using var connection = _dbConnectionFactory.CreateConnection();
+        public async Task<bool> ExistsWithSameNameExceptAsync(Nombre nombre, UsuarioId usuarioId, Guid excludeId, CancellationToken cancellationToken = default)
+        {
+            using var connection = _dbConnectionFactory.CreateConnection();
 
-     const string sql = @"
+            const string sql = @"
   SELECT EXISTS(
    SELECT 1 
      FROM formas_pago 
   WHERE nombre = @Nombre AND id_usuario = @UsuarioId AND id != @ExcludeId
-         ) as Exists";
+         ) as ItemExists";
 
-var exists = await connection.ExecuteScalarAsync<bool>(
-   new CommandDefinition(sql,
-    new { Nombre = nombre.Value, UsuarioId = usuarioId.Value, ExcludeId = excludeId },
-   cancellationToken: cancellationToken));
+            var exists = await connection.ExecuteScalarAsync<bool>(
+               new CommandDefinition(sql,
+                new { Nombre = nombre.Value, UsuarioId = usuarioId.Value, ExcludeId = excludeId },
+               cancellationToken: cancellationToken));
 
-     return exists;
-   }
+            return exists;
+        }
     }
 }

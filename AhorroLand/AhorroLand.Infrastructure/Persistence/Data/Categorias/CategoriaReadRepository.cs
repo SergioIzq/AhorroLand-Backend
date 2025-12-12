@@ -104,7 +104,7 @@ namespace AhorroLand.Infrastructure.Persistence.Data.Categorias
       SELECT 1 
    FROM categorias 
      WHERE nombre = @Nombre AND id_usuario = @UsuarioId
-   ) as Exists";
+   ) as ItemExists";
 
             var exists = await connection.ExecuteScalarAsync<bool>(
                   new CommandDefinition(sql,
@@ -123,7 +123,7 @@ namespace AhorroLand.Infrastructure.Persistence.Data.Categorias
     SELECT 1 
     FROM categorias 
       WHERE nombre = @Nombre AND id_usuario = @UsuarioId AND id != @ExcludeId
-      ) as Exists";
+      ) as ItemExists";
 
             var exists = await connection.ExecuteScalarAsync<bool>(
    new CommandDefinition(sql,

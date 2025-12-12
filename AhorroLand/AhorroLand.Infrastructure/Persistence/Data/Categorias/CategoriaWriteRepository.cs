@@ -1,5 +1,7 @@
 ﻿using AhorroLand.Domain;
+using AhorroLand.Domain.Errors;
 using AhorroLand.Infrastructure.Persistence.Command;
+using AhorroLand.Shared.Domain.Abstractions.Results;
 using AhorroLand.Shared.Domain.ValueObjects.Ids;
 
 namespace AhorroLand.Infrastructure.Persistence.Data.Categorias
@@ -15,9 +17,9 @@ namespace AhorroLand.Infrastructure.Persistence.Data.Categorias
             _readRepository = readRepository;
         }
 
-        public override async Task CreateAsync(Categoria entity, CancellationToken cancellationToken = default)
+        public async Task<Result> CreateAsyncWithValidation(Categoria entity, CancellationToken cancellationToken = default)
         {
-            // Validar que no exista una categoría con el mismo nombre para el mismo usuario
+            // 1. Validar duplicados
             var exists = await _readRepository.ExistsWithSameNameAsync(
                 entity.Nombre,
                 entity.IdUsuario,
@@ -25,32 +27,33 @@ namespace AhorroLand.Infrastructure.Persistence.Data.Categorias
 
             if (exists)
             {
-                throw new InvalidOperationException(
-                    $"Ya existe una categoría con el nombre '{entity.Nombre.Value}' para este usuario.");
+                return Result.Failure(CategoriaErrors.NombreDuplicado(entity.Nombre.Value));
             }
 
+            // 2. Agregar al contexto
             await base.CreateAsync(entity, cancellationToken);
+
+            return Result.Success();
         }
 
-        /// <summary>
-        /// Actualiza una categoría validando que no exista duplicado.
-        /// </summary>
-        public override async void Update(Categoria entity)
+        public async Task<Result> UpdateAsync(Categoria entity, CancellationToken cancellationToken = default)
         {
-            // Primero verificar que la entidad existe (validación del base)
-            base.Update(entity);
-
-            // Luego validar duplicados
+            // 1. Validar duplicados (excepto la propia entidad)
             var exists = await _readRepository.ExistsWithSameNameExceptAsync(
                 entity.Nombre,
                 entity.IdUsuario,
-                entity.Id.Value);
+                entity.Id.Value,
+                cancellationToken);
 
             if (exists)
             {
-                throw new InvalidOperationException(
-                    $"Ya existe otra categoría con el nombre '{entity.Nombre.Value}' para este usuario.");
+                return Result.Failure(CategoriaErrors.NombreDuplicado(entity.Nombre.Value));
             }
+
+            // 2. Marcar como modificado
+            base.Update(entity);
+
+            return Result.Success();
         }
     }
 }

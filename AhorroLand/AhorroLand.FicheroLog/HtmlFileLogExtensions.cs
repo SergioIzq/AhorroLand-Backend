@@ -4,7 +4,6 @@ using AhorroLand.FicheroLog.Filters;
 using AhorroLand.FicheroLog.Formatters;
 using AhorroLand.FicheroLog.Services;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
 using Serilog;
 using Serilog.Configuration;
 

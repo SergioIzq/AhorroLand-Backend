@@ -9,7 +9,7 @@ namespace AhorroLand.Domain;
 [Table("ingresos")]
 public sealed class Ingreso : AbsEntity<IngresoId>
 {
-  // Constructor privado sin parámetros para EF Core
+    // Constructor privado sin parámetros para EF Core
     private Ingreso() : base(IngresoId.Create(Guid.NewGuid()).Value)
     {
     }
@@ -26,19 +26,19 @@ public sealed class Ingreso : AbsEntity<IngresoId>
   UsuarioId usuarioId,
         Descripcion? descripcion) : base(id)
     {
-     Importe = importe;
-Fecha = fecha;
+        Importe = importe;
+        Fecha = fecha;
         ConceptoId = conceptoId;
-     ClienteId = clienteId;
-  PersonaId = personaId;
+        ClienteId = clienteId;
+        PersonaId = personaId;
         CuentaId = cuentaId;
-  FormaPagoId = formaPagoId;
+        FormaPagoId = formaPagoId;
         UsuarioId = usuarioId;
         Descripcion = descripcion;
     }
 
     public Cantidad Importe { get; private set; }
-public FechaRegistro Fecha { get; private set; }
+    public FechaRegistro Fecha { get; private set; }
     public Descripcion? Descripcion { get; private set; }
 
     public ConceptoId ConceptoId { get; private set; }
@@ -52,7 +52,7 @@ public FechaRegistro Fecha { get; private set; }
     public Cliente Cliente { get; private set; } = null!;
     public Persona Persona { get; private set; } = null!;
     public Cuenta Cuenta { get; private set; } = null!;
- public FormaPago FormaPago { get; private set; } = null!;
+    public FormaPago FormaPago { get; private set; } = null!;
     public Usuario Usuario { get; private set; } = null!;
 
     // El método Create genera el ID y no recibe los "Nombre"
@@ -97,28 +97,28 @@ public FechaRegistro Fecha { get; private set; }
         Descripcion? descripcion)
     {
         // 🔥 Guardar valores anteriores para el evento
-     var cuentaIdAnterior = CuentaId;
-      var importeAnterior = Importe;
+        var cuentaIdAnterior = CuentaId;
+        var importeAnterior = Importe;
 
-      Importe = importe;
-  Fecha = fecha;
+        Importe = importe;
+        Fecha = fecha;
         ConceptoId = conceptoId;
         ClienteId = clienteId;
         PersonaId = personaId;
         CuentaId = cuentaId;
         FormaPagoId = formaPagoId;
         UsuarioId = usuarioId;
-    Descripcion = descripcion;
+        Descripcion = descripcion;
 
         // 🔥 Lanzar evento solo si cambió la cuenta o el importe
         if (!cuentaIdAnterior.Equals(cuentaId) || !importeAnterior.Equals(importe))
         {
-       AddDomainEvent(new IngresoActualizadoEvent(
- Id, 
-       cuentaIdAnterior, 
-        importeAnterior, 
-        cuentaId, 
-        importe));
+            AddDomainEvent(new IngresoActualizadoEvent(
+      Id,
+            cuentaIdAnterior,
+             importeAnterior,
+             cuentaId,
+             importe));
         }
     }
 
@@ -127,7 +127,7 @@ public FechaRegistro Fecha { get; private set; }
     /// </summary>
     public void MarkAsDeleted()
     {
-     // 🔥 Lanzar evento de dominio cuando se elimina un ingreso
+        // 🔥 Lanzar evento de dominio cuando se elimina un ingreso
         AddDomainEvent(new IngresoEliminadoEvent(Id, CuentaId, Importe));
     }
 }

@@ -23,47 +23,47 @@ public sealed class IngresoCreadoEventHandler : INotificationHandler<IngresoCrea
         IUnitOfWork unitOfWork,
     ILogger<IngresoCreadoEventHandler> logger)
     {
-     _cuentaRepository = cuentaRepository;
-   _unitOfWork = unitOfWork;
-_logger = logger;
+        _cuentaRepository = cuentaRepository;
+        _unitOfWork = unitOfWork;
+        _logger = logger;
     }
 
-  public async Task Handle(IngresoCreadoEvent notification, CancellationToken cancellationToken)
+    public async Task Handle(IngresoCreadoEvent notification, CancellationToken cancellationToken)
     {
         try
-     {
-   // 1. Obtener la cuenta
-        var cuenta = await _cuentaRepository.GetByIdAsync(notification.CuentaId.Value, cancellationToken);
+        {
+            // 1. Obtener la cuenta
+            var cuenta = await _cuentaRepository.GetByIdAsync(notification.CuentaId.Value, cancellationToken);
 
-     if (cuenta == null)
-   {
-       _logger.LogWarning(
-   "No se encontró la cuenta {CuentaId} para actualizar saldo por ingreso {IngresoId}",
-       notification.CuentaId,
-  notification.IngresoId);
-    return;
-      }
+            if (cuenta == null)
+            {
+                _logger.LogWarning(
+            "No se encontró la cuenta {CuentaId} para actualizar saldo por ingreso {IngresoId}",
+                notification.CuentaId,
+           notification.IngresoId);
+                return;
+            }
 
-     // 2. Depositar el importe del ingreso (aumentar saldo)
-       cuenta.Depositar(notification.Importe);
+            // 2. Depositar el importe del ingreso (aumentar saldo)
+            cuenta.Depositar(notification.Importe);
 
-    // 3. Marcar como modificado y guardar
-   _cuentaRepository.Update(cuenta);
-    await _unitOfWork.SaveChangesAsync(cancellationToken);
+            // 3. Marcar como modificado y guardar
+            _cuentaRepository.Update(cuenta);
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-    _logger.LogInformation(
-     "Saldo actualizado: Cuenta {CuentaId} + {Importe} por ingreso {IngresoId}",
-      notification.CuentaId,
-       notification.Importe.Valor,
-    notification.IngresoId);
-   }
-      catch (Exception ex)
+            _logger.LogInformation(
+             "Saldo actualizado: Cuenta {CuentaId} + {Importe} por ingreso {IngresoId}",
+              notification.CuentaId,
+               notification.Importe.Valor,
+            notification.IngresoId);
+        }
+        catch (Exception ex)
         {
             _logger.LogError(ex,
      "Error al actualizar saldo de cuenta {CuentaId} por ingreso {IngresoId}",
    notification.CuentaId,
    notification.IngresoId);
-       throw;
+            throw;
         }
-}
+    }
 }

@@ -3,16 +3,16 @@ using AhorroLand.Shared.Application.Abstractions.Messaging.Abstracts.Queries;
 using AhorroLand.Shared.Application.Dtos;
 using AhorroLand.Shared.Domain.ValueObjects.Ids;
 
-namespace AhorroLand.Application.Features.FormasPago.Queries;
-
-/// <summary>
-/// Representa la consulta para obtener una lista paginada de FormasPago.
-/// </summary>
-// Hereda de AbsGetPagedListQuery<Entidad, DTO de Ítem>
-public sealed record GetFormasPagoPagedListQuery(
-    int Page,
-    int PageSize,
-    string? SearchTerm = null,
-    string? SortColumn = null,
-    string? SortOrder = null
-) : AbsGetPagedListQuery<FormaPago, FormaPagoId, FormaPagoDto>(Page, PageSize);
+public sealed record GetFormasPagoPagedListQuery : AbsGetPagedListQuery<FormaPago, FormaPagoId, FormaPagoDto>
+{
+    public GetFormasPagoPagedListQuery(
+        int page,
+        int pageSize,
+        string? searchTerm = null,
+        string? sortColumn = null,
+        string? sortOrder = null)
+        // 🔥 FIX: Si es null, enviamos "" (cadena vacía)
+        : base(page, pageSize, searchTerm ?? "", sortColumn ?? "", sortOrder ?? "")
+    {
+    }
+}

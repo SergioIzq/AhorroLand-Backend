@@ -1,5 +1,4 @@
 ﻿using AhorroLand.Shared.Application.Dtos;
-using AhorroLand.Shared.Domain.ValueObjects.Ids;
 
 namespace AhorroLand.Application.Interfaces;
 

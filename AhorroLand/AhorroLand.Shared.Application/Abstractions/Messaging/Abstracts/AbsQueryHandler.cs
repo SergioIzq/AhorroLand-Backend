@@ -1,9 +1,7 @@
 ﻿using AhorroLand.Shared.Application.Abstractions.Messaging.Abstracts.Interfaces;
 using AhorroLand.Shared.Application.Abstractions.Servicies;
 using AhorroLand.Shared.Domain.Abstractions;
-using AhorroLand.Shared.Domain.Abstractions.Results;
 using AhorroLand.Shared.Domain.Interfaces;
-using AhorroLand.Shared.Domain.Results;
 
 namespace AhorroLand.Shared.Application.Abstractions.Messaging.Abstracts;
 

@@ -1,6 +1,5 @@
 ﻿using AhorroLand.Application;
 using AhorroLand.FicheroLog;
-using AhorroLand.FicheroLog.Configuration;
 using AhorroLand.FicheroLog.Formatters;
 using AhorroLand.Infrastructure;
 using AhorroLand.Infrastructure.Configuration;
@@ -238,7 +237,7 @@ try
             ClockSkew = TimeSpan.Zero
         };
         options.RequireHttpsMetadata = false; // Permitir http en dev
-        
+
         // 🔥 FIX: Leer token desde Cookie O Header Authorization
         options.Events = new JwtBearerEvents
         {
@@ -246,13 +245,13 @@ try
             {
                 // 1. Primero intentar leer del header Authorization (comportamiento estándar)
                 var token = context.Request.Headers.Authorization.FirstOrDefault()?.Split(" ").Last();
-                
+
                 // 2. Si no está en el header, intentar leer de la cookie "AccessToken"
                 token ??= context.Request.Cookies["AccessToken"];
-                
+
                 // 3. Asignar el token al contexto para que JWT Bearer lo valide
                 context.Token = token;
-                
+
                 return Task.CompletedTask;
             },
             OnAuthenticationFailed = context =>

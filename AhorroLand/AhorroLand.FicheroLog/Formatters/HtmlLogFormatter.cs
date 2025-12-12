@@ -1,7 +1,7 @@
 ﻿using Serilog.Events;
 using Serilog.Formatting;
-using System.Text;
 using System.Net; // Necesario para WebUtility
+using System.Text;
 
 namespace AhorroLand.FicheroLog.Formatters;
 

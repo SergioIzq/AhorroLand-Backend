@@ -1,7 +1,6 @@
 ﻿using AhorroLand.Domain;
 using AhorroLand.Infrastructure.Persistence.Query;
 using AhorroLand.Shared.Application.Dtos;
-using AhorroLand.Shared.Domain.Interfaces;
 using AhorroLand.Shared.Domain.ValueObjects;
 using AhorroLand.Shared.Domain.ValueObjects.Ids;
 using Dapper;

@@ -12,7 +12,7 @@ namespace AhorroLand.Shared.Application.Abstractions.Messaging.Abstracts.Queries
 public abstract record SearchForAutocompleteQuery<TEntity, TDto, TId> : IRequest<Result<IEnumerable<TDto>>>
     where TEntity : AbsEntity<TId>
     where TDto : class
-    where TId: IGuidValueObject
+    where TId : IGuidValueObject
 {
     public Guid? UsuarioId { get; init; }
     public string SearchTerm { get; init; }

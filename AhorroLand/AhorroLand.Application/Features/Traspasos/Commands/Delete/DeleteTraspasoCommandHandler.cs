@@ -23,17 +23,17 @@ public sealed class DeleteTraspasoCommandHandler
         )
       : base(unitOfWork, writeRepository, cacheService, userContext)
     {
-  }
+    }
 
     /// <summary>
     /// 🔥 OVERRIDE: Cargamos la entidad real para poder disparar el evento de dominio.
     /// </summary>
     protected override async Task<Traspaso?> LoadEntityForDeletionAsync(Guid id, CancellationToken cancellationToken)
     {
-    // 1. Cargar la entidad real desde la base de datos
-     var traspaso = await _writeRepository.GetByIdAsync(id, cancellationToken);
+        // 1. Cargar la entidad real desde la base de datos
+        var traspaso = await _writeRepository.GetByIdAsync(id, cancellationToken);
 
- if (traspaso == null)
+        if (traspaso == null)
         {
             return null;
         }

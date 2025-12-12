@@ -1,15 +1,12 @@
 ﻿using AhorroLand.Domain;
-using AhorroLand.Domain.Traspasos.Eventos;
 using AhorroLand.Shared.Application.Abstractions.Messaging.Abstracts.Commands;
 using AhorroLand.Shared.Application.Abstractions.Servicies;
-using AhorroLand.Shared.Application.Dtos;
+using AhorroLand.Shared.Application.Interfaces;
 using AhorroLand.Shared.Domain.Abstractions.Results;
 using AhorroLand.Shared.Domain.Interfaces;
 using AhorroLand.Shared.Domain.Interfaces.Repositories;
 using AhorroLand.Shared.Domain.ValueObjects;
-using Mapster;
 using AhorroLand.Shared.Domain.ValueObjects.Ids;
-using AhorroLand.Shared.Application.Interfaces;
 
 namespace AhorroLand.Application.Features.Traspasos.Commands;
 

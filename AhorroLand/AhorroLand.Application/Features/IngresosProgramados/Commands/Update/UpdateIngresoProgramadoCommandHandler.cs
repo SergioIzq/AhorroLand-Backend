@@ -28,10 +28,10 @@ public sealed class UpdateIngresoProgramadoCommandHandler
         // Convertir los datos del comando a Value Objects
         var importeVO = Cantidad.Create(command.Importe).Value;
         var frecuenciaVO = Frecuencia.Create(command.Frecuencia).Value;
-        var descripcionVO = string.IsNullOrWhiteSpace(command.Descripcion) 
-            ? (Descripcion?)null 
+        var descripcionVO = string.IsNullOrWhiteSpace(command.Descripcion)
+            ? (Descripcion?)null
             : new Descripcion(command.Descripcion);
-        
+
         var conceptoIdVO = ConceptoId.Create(command.ConceptoId).Value;
         var clienteIdVO = ClienteId.Create(command.ClienteId).Value;
         var personaIdVO = PersonaId.Create(command.PersonaId).Value;

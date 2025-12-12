@@ -3,12 +3,16 @@ using AhorroLand.Shared.Application.Abstractions.Messaging.Abstracts.Queries;
 using AhorroLand.Shared.Application.Dtos;
 using AhorroLand.Shared.Domain.ValueObjects.Ids;
 
-namespace AhorroLand.Application.Features.Ingresos.Queries;
-
-public sealed record GetIngresosPagedListQuery(
-    int Page,
-    int PageSize,
-    string? SearchTerm = null,
-    string? SortColumn = null,
-    string? SortOrder = null
-) : AbsGetPagedListQuery<Ingreso, IngresoId, IngresoDto>(Page, PageSize);
+public sealed record GetIngresosPagedListQuery : AbsGetPagedListQuery<Ingreso, IngresoId, IngresoDto>
+{
+    public GetIngresosPagedListQuery(
+        int page,
+        int pageSize,
+        string? searchTerm = null,
+        string? sortColumn = null,
+        string? sortOrder = null)
+        // 🔥 FIX: Si es null, enviamos "" (cadena vacía)
+        : base(page, pageSize, searchTerm ?? "", sortColumn ?? "", sortOrder ?? "")
+    {
+    }
+}

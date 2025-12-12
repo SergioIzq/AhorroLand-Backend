@@ -5,7 +5,7 @@ namespace AhorroLand.Shared.Domain.Interfaces.Repositories;
 /// <summary>
 /// Define las operaciones de escritura: Creación, Actualización y Eliminación.
 /// </summary>
-public interface IWriteRepository<T, TId> where T : AbsEntity<TId> where TId: IGuidValueObject
+public interface IWriteRepository<T, TId> where T : AbsEntity<TId> where TId : IGuidValueObject
 {
     /// <summary>
     /// Obtiene una entidad por ID con tracking habilitado (para Commands).

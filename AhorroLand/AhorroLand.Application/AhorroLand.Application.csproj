@@ -7,12 +7,14 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\AhorroLand.Domain\AhorroLand.Domain.csproj" />
-    <ProjectReference Include="..\AhorroLand.Shared.Application\AhorroLand.Shared.Application.csproj" />
+    <Compile Remove="Features\Personas\Search\**" />
+    <EmbeddedResource Remove="Features\Personas\Search\**" />
+    <None Remove="Features\Personas\Search\**" />
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Features\Personas\Search\" />
+    <ProjectReference Include="..\AhorroLand.Domain\AhorroLand.Domain.csproj" />
+    <ProjectReference Include="..\AhorroLand.Shared.Application\AhorroLand.Shared.Application.csproj" />
   </ItemGroup>
 
 </Project>

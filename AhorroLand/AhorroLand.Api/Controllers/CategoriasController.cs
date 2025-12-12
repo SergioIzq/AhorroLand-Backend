@@ -6,7 +6,6 @@ using AhorroLand.Shared.Domain.Abstractions.Results; // Para Error
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.OutputCaching;
 
 namespace AhorroLand.NuevaApi.Controllers;
 
@@ -23,18 +22,23 @@ public class CategoriasController : AbsController
     /// Obtiene lista paginada de categorías del usuario autenticado.
     /// </summary>
     [HttpGet]
-    public async Task<IActionResult> GetAll([FromQuery] int page = 1, [FromQuery] int pageSize = 10)
+    public async Task<IActionResult> GetPagedList(
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 10,
+        [FromQuery] string searchTerm = "",
+        [FromQuery] string sortColumn = "",
+        [FromQuery] string sortOrder = "")
     {
-        // 1. Obtenemos el ID del usuario del token
+        // ✅ OPTIMIZACIÓN: Usamos el helper de la clase base
         var usuarioId = GetCurrentUserId();
 
         if (usuarioId is null)
         {
+            // Retornamos un 401 usando el formato estandarizado
             return Unauthorized(Result.Failure(Error.Unauthorized("Usuario no autenticado")));
         }
 
-        // 2. Pasamos el ID a la query (IMPORTANTE: Filtrar por usuario)
-        var query = new GetCategoriasPagedListQuery(page, pageSize)
+        var query = new GetCategoriasPagedListQuery(page, pageSize, searchTerm, sortColumn, sortOrder)
         {
             UsuarioId = usuarioId.Value
         };

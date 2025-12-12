@@ -1,5 +1,4 @@
 ﻿using AhorroLand.Shared.Application.Abstractions.Messaging;
-using AhorroLand.Shared.Domain.Abstractions.Results;
 
 namespace AhorroLand.Application.Features.Auth.Commands.ResendConfirmationEmail;
 

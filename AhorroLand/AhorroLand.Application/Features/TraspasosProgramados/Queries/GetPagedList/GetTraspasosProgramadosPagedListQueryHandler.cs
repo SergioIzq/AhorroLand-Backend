@@ -1,5 +1,4 @@
-﻿using AhorroLand.Application.Features.Clientes.Queries;
-using AhorroLand.Domain;
+﻿using AhorroLand.Domain;
 using AhorroLand.Shared.Application.Abstractions.Messaging.Abstracts.Queries;
 using AhorroLand.Shared.Application.Abstractions.Servicies;
 using AhorroLand.Shared.Application.Dtos;

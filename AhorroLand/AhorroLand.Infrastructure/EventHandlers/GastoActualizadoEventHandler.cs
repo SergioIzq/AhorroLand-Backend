@@ -16,12 +16,12 @@ public sealed class GastoActualizadoEventHandler : INotificationHandler<GastoAct
 {
     private readonly IWriteRepository<Cuenta, CuentaId> _cuentaRepository;
     private readonly IUnitOfWork _unitOfWork;
- private readonly ILogger<GastoActualizadoEventHandler> _logger;
+    private readonly ILogger<GastoActualizadoEventHandler> _logger;
 
-  public GastoActualizadoEventHandler(
-        IWriteRepository<Cuenta, CuentaId> cuentaRepository,
-        IUnitOfWork unitOfWork,
-        ILogger<GastoActualizadoEventHandler> logger)
+    public GastoActualizadoEventHandler(
+          IWriteRepository<Cuenta, CuentaId> cuentaRepository,
+          IUnitOfWork unitOfWork,
+          ILogger<GastoActualizadoEventHandler> logger)
     {
         _cuentaRepository = cuentaRepository;
         _unitOfWork = unitOfWork;
@@ -31,70 +31,70 @@ public sealed class GastoActualizadoEventHandler : INotificationHandler<GastoAct
     public async Task Handle(GastoActualizadoEvent notification, CancellationToken cancellationToken)
     {
         try
- {
+        {
             // Si la cuenta no cambió y el importe tampoco, no hacemos nada
-     if (notification.CuentaIdAnterior.Equals(notification.CuentaIdNueva) && 
-                notification.ImporteAnterior.Equals(notification.ImporteNuevo))
-       {
-    return;
-}
+            if (notification.CuentaIdAnterior.Equals(notification.CuentaIdNueva) &&
+                       notification.ImporteAnterior.Equals(notification.ImporteNuevo))
+            {
+                return;
+            }
 
             // CASO 1: Cambió la cuenta (movimiento entre cuentas)
-  if (!notification.CuentaIdAnterior.Equals(notification.CuentaIdNueva))
+            if (!notification.CuentaIdAnterior.Equals(notification.CuentaIdNueva))
             {
-        // 1.1 Revertir en cuenta anterior (depositar lo que se había retirado)
-     var cuentaAnterior = await _cuentaRepository.GetByIdAsync(notification.CuentaIdAnterior.Value, cancellationToken);
-          if (cuentaAnterior != null)
-    {
-       cuentaAnterior.Depositar(notification.ImporteAnterior);
-   _cuentaRepository.Update(cuentaAnterior);
+                // 1.1 Revertir en cuenta anterior (depositar lo que se había retirado)
+                var cuentaAnterior = await _cuentaRepository.GetByIdAsync(notification.CuentaIdAnterior.Value, cancellationToken);
+                if (cuentaAnterior != null)
+                {
+                    cuentaAnterior.Depositar(notification.ImporteAnterior);
+                    _cuentaRepository.Update(cuentaAnterior);
                 }
 
-        // 1.2 Aplicar en cuenta nueva (retirar nuevo importe)
-            var cuentaNueva = await _cuentaRepository.GetByIdAsync(notification.CuentaIdNueva.Value, cancellationToken);
-if (cuentaNueva != null)
-          {
-            cuentaNueva.Retirar(notification.ImporteNuevo);
-   _cuentaRepository.Update(cuentaNueva);
-     }
-  }
-       // CASO 2: Misma cuenta, pero cambió el importe
-    else
- {
-     var cuenta = await _cuentaRepository.GetByIdAsync(notification.CuentaIdNueva.Value, cancellationToken);
-      if (cuenta != null)
+                // 1.2 Aplicar en cuenta nueva (retirar nuevo importe)
+                var cuentaNueva = await _cuentaRepository.GetByIdAsync(notification.CuentaIdNueva.Value, cancellationToken);
+                if (cuentaNueva != null)
                 {
-        // Revertir importe anterior
-         cuenta.Depositar(notification.ImporteAnterior);
-             // Aplicar nuevo importe
-            cuenta.Retirar(notification.ImporteNuevo);
-      _cuentaRepository.Update(cuenta);
-       }
+                    cuentaNueva.Retirar(notification.ImporteNuevo);
+                    _cuentaRepository.Update(cuentaNueva);
+                }
+            }
+            // CASO 2: Misma cuenta, pero cambió el importe
+            else
+            {
+                var cuenta = await _cuentaRepository.GetByIdAsync(notification.CuentaIdNueva.Value, cancellationToken);
+                if (cuenta != null)
+                {
+                    // Revertir importe anterior
+                    cuenta.Depositar(notification.ImporteAnterior);
+                    // Aplicar nuevo importe
+                    cuenta.Retirar(notification.ImporteNuevo);
+                    _cuentaRepository.Update(cuenta);
+                }
             }
 
             await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-    _logger.LogInformation(
-           "Saldo actualizado por modificación de gasto {GastoId}: Cuenta anterior {CuentaAnterior} ({ImporteAnterior}) -> Cuenta nueva {CuentaNueva} ({ImporteNuevo})",
- notification.GastoId,
-            notification.CuentaIdAnterior,
-    notification.ImporteAnterior.Valor,
-      notification.CuentaIdNueva,
- notification.ImporteNuevo.Valor);
-    }
-        catch (InvalidOperationException ex)
-      {
-  _logger.LogError(ex,
-    "Saldo insuficiente al actualizar gasto {GastoId}",
-    notification.GastoId);
-       throw;
+            _logger.LogInformation(
+                   "Saldo actualizado por modificación de gasto {GastoId}: Cuenta anterior {CuentaAnterior} ({ImporteAnterior}) -> Cuenta nueva {CuentaNueva} ({ImporteNuevo})",
+         notification.GastoId,
+                    notification.CuentaIdAnterior,
+            notification.ImporteAnterior.Valor,
+              notification.CuentaIdNueva,
+         notification.ImporteNuevo.Valor);
         }
-      catch (Exception ex)
-    {
+        catch (InvalidOperationException ex)
+        {
+            _logger.LogError(ex,
+              "Saldo insuficiente al actualizar gasto {GastoId}",
+              notification.GastoId);
+            throw;
+        }
+        catch (Exception ex)
+        {
             _logger.LogError(ex,
      "Error al actualizar saldo por modificación de gasto {GastoId}",
               notification.GastoId);
-    throw;
+            throw;
         }
     }
 }

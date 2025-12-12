@@ -1,7 +1,6 @@
 ﻿using AhorroLand.Domain;
 using AhorroLand.Shared.Application.Abstractions.Messaging.Abstracts.Commands;
 using AhorroLand.Shared.Application.Abstractions.Servicies;
-using AhorroLand.Shared.Application.Dtos;
 using AhorroLand.Shared.Application.Interfaces;
 using AhorroLand.Shared.Domain.Interfaces;
 using AhorroLand.Shared.Domain.Interfaces.Repositories;

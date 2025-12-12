@@ -5,7 +5,6 @@ using AhorroLand.Shared.Domain.Abstractions.Results; // Para Error y Result
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.OutputCaching;
 
 namespace AhorroLand.NuevaApi.Controllers;
 
@@ -21,19 +20,20 @@ public class GastosController : AbsController
     /// <summary>
     /// Obtiene una lista paginada de gastos con soporte para búsqueda y ordenamiento.
     /// </summary>
-    [HttpGet] // Estandarizado a la raíz (GET /api/gastos)
-    public async Task<IActionResult> GetAll(
+    [HttpGet]
+    public async Task<IActionResult> GetPagedList(
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 10,
-        [FromQuery] string? searchTerm = null,
-        [FromQuery] string? sortColumn = null,
-        [FromQuery] string? sortOrder = null)
+        [FromQuery] string searchTerm = "",
+        [FromQuery] string sortColumn = "",
+        [FromQuery] string sortOrder = "")
     {
-        // 1. Obtener ID del usuario de forma segura
+        // ✅ OPTIMIZACIÓN: Usamos el helper de la clase base
         var usuarioId = GetCurrentUserId();
 
         if (usuarioId is null)
         {
+            // Retornamos un 401 usando el formato estandarizado
             return Unauthorized(Result.Failure(Error.Unauthorized("Usuario no autenticado")));
         }
 

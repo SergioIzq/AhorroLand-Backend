@@ -157,4 +157,17 @@ public sealed class IngresoProgramado : AbsEntity<IngresoProgramadoId>
     {
         Activo = true;
     }
+
+    /// <summary>
+    /// Marca el ingreso programado como eliminado y lanza el evento de dominio.
+    /// 🔥 Dispara IngresoProgramadoEliminadoEvent.
+    /// </summary>
+    public void MarkAsDeleted()
+    {
+        // 🔥 Lanzar evento de dominio cuando se elimina
+        AddDomainEvent(new IngresoProgramadoEliminadoEvent(
+            Id,
+            CuentaId,
+            Importe));
+    }
 }

@@ -12,14 +12,14 @@ namespace AhorroLand.Infrastructure.Persistence.Data.Personas
         public PersonaReadRepository(IDbConnectionFactory dbConnectionFactory)
             : base(dbConnectionFactory, "personas")
         {
-     }
+        }
 
         /// <summary>
         /// 🔥 Query específico para Persona con todas sus columnas.
-    /// </summary>
-    protected override string BuildGetByIdQuery()
-      {
-        return @"
+        /// </summary>
+        protected override string BuildGetByIdQuery()
+        {
+            return @"
       SELECT 
     id as Id,
    nombre as Nombre,
@@ -27,36 +27,36 @@ namespace AhorroLand.Infrastructure.Persistence.Data.Personas
  fecha_creacion as FechaCreacion
           FROM personas 
         WHERE id = @id";
-    }
+        }
 
-    /// <summary>
-     /// 🔥 Query para obtener todas las personas.
+        /// <summary>
+        /// 🔥 Query para obtener todas las personas.
         /// </summary>
-  protected override string BuildGetAllQuery()
-     {
-       return @"
+        protected override string BuildGetAllQuery()
+        {
+            return @"
 SELECT 
    id as Id,
 nombre as Nombre,
  id_usuario as UsuarioId,
      fecha_creacion as FechaCreacion
           FROM personas";
- }
+        }
 
         /// <summary>
-      /// 🔥 ORDER BY por nombre ascendente.
-   /// </summary>
+        /// 🔥 ORDER BY por nombre ascendente.
+        /// </summary>
         protected override string GetDefaultOrderBy()
-     {
- return "ORDER BY nombre ASC";
- }
+        {
+            return "ORDER BY nombre ASC";
+        }
 
         /// <summary>
-      /// 🔥 NUEVO: Define las columnas por las que se puede ordenar.
+        /// 🔥 NUEVO: Define las columnas por las que se puede ordenar.
         /// </summary>
         protected override Dictionary<string, string> GetSortableColumns()
         {
-   return new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+            return new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
    {
          { "Nombre", "nombre" },
            { "FechaCreacion", "fecha_creacion" }
@@ -65,45 +65,45 @@ nombre as Nombre,
 
         /// <summary>
         /// 🔥 NUEVO: Define las columnas en las que se puede buscar.
-      /// </summary>
-   protected override List<string> GetSearchableColumns()
+        /// </summary>
+        protected override List<string> GetSearchableColumns()
         {
-       return new List<string>
+            return new List<string>
       {
          "nombre"
           };
- }
+        }
 
- public async Task<bool> ExistsWithSameNameAsync(Nombre nombre, UsuarioId usuarioId, CancellationToken cancellationToken = default)
-     {
-using var connection = _dbConnectionFactory.CreateConnection();
+        public async Task<bool> ExistsWithSameNameAsync(Nombre nombre, UsuarioId usuarioId, CancellationToken cancellationToken = default)
+        {
+            using var connection = _dbConnectionFactory.CreateConnection();
 
-  const string sql = @"
+            const string sql = @"
           SELECT COUNT(1) 
       FROM personas 
    WHERE nombre = @Nombre AND id_usuario = @UsuarioId";
 
-       var count = await connection.ExecuteScalarAsync<int>(
-       sql,
-    new { Nombre = nombre.Value, UsuarioId = usuarioId.Value });
+            var count = await connection.ExecuteScalarAsync<int>(
+            sql,
+         new { Nombre = nombre.Value, UsuarioId = usuarioId.Value });
 
             return count > 0;
-  }
+        }
 
         public async Task<bool> ExistsWithSameNameExceptAsync(Nombre nombre, UsuarioId usuarioId, Guid excludeId, CancellationToken cancellationToken = default)
         {
             using var connection = _dbConnectionFactory.CreateConnection();
 
-   const string sql = @"
+            const string sql = @"
           SELECT COUNT(1) 
        FROM personas 
    WHERE nombre = @Nombre AND id_usuario = @UsuarioId AND id != @ExcludeId";
 
-     var count = await connection.ExecuteScalarAsync<int>(
-     sql,
-     new { Nombre = nombre.Value, UsuarioId = usuarioId.Value, ExcludeId = excludeId });
+            var count = await connection.ExecuteScalarAsync<int>(
+            sql,
+            new { Nombre = nombre.Value, UsuarioId = usuarioId.Value, ExcludeId = excludeId });
 
             return count > 0;
- }
+        }
     }
 }

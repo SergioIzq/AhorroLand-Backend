@@ -29,7 +29,7 @@
 
         public Guid FormaPagoId { get; init; }
         public string FormaPagoNombre { get; init; } = string.Empty;
-        
+
         public Guid UsuarioId { get; init; }
     }
 }

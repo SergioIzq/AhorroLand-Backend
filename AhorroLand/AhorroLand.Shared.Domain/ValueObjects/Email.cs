@@ -1,5 +1,5 @@
-﻿using System.Text.RegularExpressions;
-using AhorroLand.Shared.Domain.Abstractions.Results;
+﻿using AhorroLand.Shared.Domain.Abstractions.Results;
+using System.Text.RegularExpressions;
 
 namespace AhorroLand.Shared.Domain.ValueObjects;
 

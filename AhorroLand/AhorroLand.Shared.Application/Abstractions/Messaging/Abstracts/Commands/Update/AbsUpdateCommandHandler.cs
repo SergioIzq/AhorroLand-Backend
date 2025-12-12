@@ -10,7 +10,8 @@ namespace AhorroLand.Shared.Application.Abstractions.Messaging.Abstracts.Command
 
 /// <summary>
 /// Handler genérico para actualizar entidades.
-/// 🔥 MODIFICADO: Ahora devuelve Result<Guid> en lugar de Result<TDto> para ser consistente con Create.
+/// 🔥 MODIFICADO: Ahora devuelve Result<Guid> y maneja validaciones de dominio con Result en lugar de excepciones.
+/// 🔥 ROLLBACK AUTOMÁTICO: Si ApplyChanges falla, se hace rollback de la transacción.
 /// </summary>
 public abstract class AbsUpdateCommandHandler<TEntity, TId, TDto, TCommand>
     : AbsCommandHandler<TEntity, TId>, IRequestHandler<TCommand, Result<Guid>>
@@ -28,10 +29,13 @@ public abstract class AbsUpdateCommandHandler<TEntity, TId, TDto, TCommand>
     {
     }
 
-    // Método abstracto para que el hijo aplique los cambios
+    /// <summary>
+    /// Método abstracto para que el hijo aplique los cambios.
+    /// 🔥 CAMBIO IMPORTANTE: Ahora devuelve Result en lugar de void.
+    /// </summary>
     protected abstract void ApplyChanges(TEntity entity, TCommand command);
 
-    public async Task<Result<Guid>> Handle(TCommand command, CancellationToken cancellationToken)
+    public virtual async Task<Result<Guid>> Handle(TCommand command, CancellationToken cancellationToken)
     {
         // 1. Obtener la entidad (Tracking activado para Update)
         var entity = await _writeRepository.GetByIdAsync(command.Id, cancellationToken);
@@ -41,23 +45,34 @@ public abstract class AbsUpdateCommandHandler<TEntity, TId, TDto, TCommand>
             return Result.Failure<Guid>(Error.NotFound($"{typeof(TEntity).Name} con ID '{command.Id}' no encontrada."));
         }
 
-        // 2. Aplicar lógica de dominio (Value Objects)
-        // Aquí capturamos errores de validación de negocio (ej. "Nombre vacío", "Precio negativo")
+        // 2. 🔥 NUEVO: Aplicar cambios con Result (sin try-catch, sin excepciones)
+        ApplyChanges(entity, command);
+
+        // 3. Marcar la entidad como modificada (Entity Framework la rastrea automáticamente)
+        _writeRepository.Update(entity);
+
+        // 4. 🔥 Persistencia con rollback automático si falla
         try
         {
-            ApplyChanges(entity, command);
+            var result = await UpdateAsync(entity, cancellationToken);
+
+            if (result.IsFailure)
+            {
+                // Si UpdateAsync falla, el UnitOfWork hará rollback automáticamente
+                return result;
+            }
+
+            // 5. Retornar el ID si todo fue exitoso
+            return result;
         }
-        catch (Exception ex) when (ex is ArgumentException || ex is InvalidOperationException)
+        catch (Exception ex)
         {
-            // Transformamos la excepción del Value Object en un Result.Failure limpio
-            return Result.Failure<Guid>(Error.Validation(ex.Message));
+            // 🔥 Capturar errores de BD (violación de constraint, timeout, etc.)
+            // El UnitOfWork hará rollback automáticamente
+            return Result.Failure<Guid>(Error.Failure(
+                "Database.Error",
+                "Error de base de datos",
+                ex.Message));
         }
-
-        // 3. Persistencia (incluye invalidación de caché con versionado)
-        // Si hay error de BD (ej. Nombre duplicado), UpdateAsync dejará que suba al Middleware Global (que devuelve 409)
-        var result = await UpdateAsync(entity, cancellationToken);
-
-        // 4. Retornar solo el ID (consistente con CreateAsync)
-        return result;
     }
 }

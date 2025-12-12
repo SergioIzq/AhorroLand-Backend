@@ -15,7 +15,7 @@ public sealed class Usuario : AbsEntity<UsuarioId>
     {
 
     }
-    
+
     private Usuario(
         UsuarioId id,
         Email correo,

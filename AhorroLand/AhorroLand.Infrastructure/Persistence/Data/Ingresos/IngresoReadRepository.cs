@@ -102,28 +102,28 @@ LEFT JOIN cuentas cta ON i.id_cuenta = cta.id
 LEFT JOIN formas_pago fp ON i.id_forma_pago = fp.id";
         }
 
-/// <summary>
+        /// <summary>
         /// 🔥 IMPORTANTE: Query para paginación (debe incluir los mismos JOINs que BuildGetAllQuery).
         /// </summary>
-  protected override string BuildGetPagedQuery()
-   {
+        protected override string BuildGetPagedQuery()
+        {
             return BuildGetAllQuery(); // Reutilizar el query completo con JOINs
-      }
+        }
 
-      /// <summary>
+        /// <summary>
         /// 🔥 ORDER BY por defecto: ordenar por fecha descendente (más recientes primero).
         /// </summary>
         protected override string GetDefaultOrderBy()
         {
             return "ORDER BY i.fecha DESC, i.id DESC";
-   }
+        }
 
-    /// <summary>
+        /// <summary>
         /// 🔥 NUEVO: Define las columnas por las que se puede ordenar.
         /// </summary>
         protected override Dictionary<string, string> GetSortableColumns()
         {
-      return new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+            return new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
      {
        { "Fecha", "i.fecha" },
         { "Importe", "i.importe" },
@@ -134,14 +134,14 @@ LEFT JOIN formas_pago fp ON i.id_forma_pago = fp.id";
               { "CuentaNombre", "cta.nombre" },
    { "FormaPagoNombre", "fp.nombre" }
 };
-  }
+        }
 
         /// <summary>
         /// 🔥 NUEVO: Define las columnas de TEXTO en las que se puede buscar con LIKE.
         /// </summary>
         protected override List<string> GetSearchableColumns()
         {
-     return new List<string>
+            return new List<string>
             {
     "i.descripcion",      // Descripción del ingreso
        "c.nombre", // Nombre del concepto
@@ -157,7 +157,7 @@ LEFT JOIN formas_pago fp ON i.id_forma_pago = fp.id";
         /// </summary>
         protected override List<string> GetNumericSearchableColumns()
         {
-    return new List<string>
+            return new List<string>
    {
         "i.importe"  // Buscar por importe exacto
 };
@@ -165,13 +165,13 @@ LEFT JOIN formas_pago fp ON i.id_forma_pago = fp.id";
 
         /// <summary>
         /// 🔥 NUEVO: Define las columnas de FECHA en las que se puede buscar.
-     /// </summary>
+        /// </summary>
         protected override List<string> GetDateSearchableColumns()
         {
-   return new List<string>
+            return new List<string>
       {
   "i.fecha"  // Buscar por fecha
      };
         }
- }
+    }
 }

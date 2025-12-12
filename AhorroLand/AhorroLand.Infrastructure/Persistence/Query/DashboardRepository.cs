@@ -2,7 +2,6 @@
 using Dapper;
 using System.Globalization;
 using ApplicationInterface = AhorroLand.Application.Interfaces;
-using AhorroLand.Shared.Domain.ValueObjects.Ids;
 
 namespace AhorroLand.Infrastructure.Persistence.Query;
 
@@ -248,7 +247,7 @@ public sealed class DashboardRepository : ApplicationInterface.IDashboardReposit
         object parametros)
     {
         using var multi = await connection.QueryMultipleAsync(sql, parametros);
-        
+
         var balanceTotal = await multi.ReadFirstAsync<decimal>();
         var ingresosMesActual = await multi.ReadFirstAsync<decimal>();
         var gastosMesActual = await multi.ReadFirstAsync<decimal>();
@@ -316,7 +315,7 @@ public sealed class DashboardRepository : ApplicationInterface.IDashboardReposit
         var categorias = await connection.QueryAsync<CategoriaGastoDto>(
             sql,
             new { UsuarioId = usuarioId, FechaInicio = fechaInicio, FechaFin = fechaFin, CuentaId = cuentaId, CategoriaId = categoriaId });
-        
+
         return categorias.ToList();
     }
 

@@ -1,6 +1,4 @@
-﻿using MediatR;
-
-namespace AhorroLand.Shared.Domain.Interfaces;
+﻿namespace AhorroLand.Shared.Domain.Interfaces;
 
 public interface IHasDomainEvents
 {

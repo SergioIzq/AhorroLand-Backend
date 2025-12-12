@@ -33,9 +33,9 @@ public readonly record struct Cantidad
         return Result.Success(new Cantidad(valor));
     }
 
-    public static Cantidad CreateFromDatabase(decimal valor) => new (valor);
+    public static Cantidad CreateFromDatabase(decimal valor) => new(valor);
 
-    public Cantidad Sumar(Cantidad otro) => new (Valor + otro.Valor);
-    public Cantidad Restar(Cantidad otro) => new (Valor - otro.Valor);
-    public static Cantidad Zero() => new (0);
+    public Cantidad Sumar(Cantidad otro) => new(Valor + otro.Valor);
+    public Cantidad Restar(Cantidad otro) => new(Valor - otro.Valor);
+    public static Cantidad Zero() => new(0);
 }

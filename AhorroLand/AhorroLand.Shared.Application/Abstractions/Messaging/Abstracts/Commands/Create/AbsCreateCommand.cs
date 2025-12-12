@@ -13,7 +13,7 @@ namespace AhorroLand.Shared.Application.Abstractions.Messaging.Abstracts.Command
 // Hereda de IRequest<Result<TDto>> para el flujo de MediatR
 public abstract record AbsCreateCommand<TEntity, TId> : IRequest<Result<Guid>>
     where TEntity : AbsEntity<TId>
-    where TId: IGuidValueObject
+    where TId : IGuidValueObject
 {
 
 }

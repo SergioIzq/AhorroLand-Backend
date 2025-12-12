@@ -12,6 +12,6 @@ namespace AhorroLand.Shared.Application.Abstractions.Messaging.Abstracts.Queries
     /// <typeparam name="TDto">El DTO de respuesta que se espera (ya mapeado).</typeparam>
     public abstract record AbsGetByIdQuery<TEntity, TId, TDto>(Guid Id) : IRequest<Result<TDto>>
         where TEntity : AbsEntity<TId>
-        where TId: IGuidValueObject
-        where TDto : class; 
+        where TId : IGuidValueObject
+        where TDto : class;
 }

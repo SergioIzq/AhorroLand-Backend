@@ -34,9 +34,9 @@ namespace AhorroLand.Shared.Domain.Interfaces.Repositories
         /// Usa índices en la base de datos para máximo rendimiento (~50ms vs 370ms).
         /// </summary>
         Task<PagedList<TDto>> GetPagedReadModelsByUserAsync(
-            Guid usuarioId, 
-            int page, 
-            int pageSize, 
+            Guid usuarioId,
+            int page,
+            int pageSize,
             string? searchTerm = null,
             string? sortColumn = null,
             string? sortOrder = null,

@@ -24,12 +24,13 @@ namespace AhorroLand.Infrastructure.Persistence.Data.Clientes
         protected override string BuildGetByIdQuery()
         {
             return @"
-       SELECT 
-       id as Id,
-      nombre as Nombre,
-         id_usuario as UsuarioId
-   FROM clientes 
-      WHERE id = @id";
+                SELECT 
+                    id as Id,
+                    nombre as Nombre,
+                    id_usuario as UsuarioId,
+                    fecha_creacion as FechaCreacion
+                FROM clientes 
+                WHERE id = @id";
         }
 
         /// <summary>
@@ -38,11 +39,12 @@ namespace AhorroLand.Infrastructure.Persistence.Data.Clientes
         protected override string BuildGetAllQuery()
         {
             return @"
-    SELECT 
-          id as Id,
-   nombre as Nombre,
-   id_usuario as UsuarioId
-           FROM clientes";
+                SELECT 
+                    id as Id,
+                    nombre as Nombre,
+                    id_usuario as UsuarioId,
+                    fecha_creacion as FechaCreacion
+                FROM clientes";
         }
 
         /// <summary>
@@ -52,11 +54,12 @@ namespace AhorroLand.Infrastructure.Persistence.Data.Clientes
         protected override string BuildGetPagedQuery()
         {
             return @"
-   SELECT 
-       id as Id,
-             nombre as Nombre,
-   id_usuario as UsuarioId
-   FROM clientes";
+                SELECT 
+                    id as Id,
+                    nombre as Nombre,
+                    id_usuario as UsuarioId,
+                    fecha_creacion as FechaCreacion
+                FROM clientes";
         }
 
         /// <summary>
@@ -81,39 +84,39 @@ namespace AhorroLand.Infrastructure.Persistence.Data.Clientes
         protected override Dictionary<string, string> GetSortableColumns()
         {
             return new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
-    {
-       { "Nombre", "nombre" }
+            {
+                { "Nombre", "nombre" },
+                { "FechaCreacion", "fecha_creacion" }
             };
         }
 
         /// <summary>
         /// 🔥 NUEVO: Define las columnas en las que se puede buscar.
+        /// ⚠️ NOTA: Ya no es necesario excluir 'id' manualmente, el AbsReadRepository lo hace automáticamente.
         /// </summary>
         protected override List<string> GetSearchableColumns()
         {
             return new List<string>
-   {
-    "nombre"
-   };
+            {
+                "nombre"
+            };
         }
 
         public async Task<bool> ExistsWithSameNameAsync(Nombre nombre, UsuarioId usuarioId, CancellationToken cancellationToken = default)
         {
             using var connection = _dbConnectionFactory.CreateConnection();
 
-            // 🚀 OPTIMIZACIÓN: EXISTS es más rápido que COUNT para verificación de existencia
             const string sql = @"
-       SELECT EXISTS(
-      SELECT 1 
-       FROM clientes 
-       WHERE nombre = @Nombre AND id_usuario = @UsuarioId
-                ) as Exists";
+                SELECT EXISTS(
+                    SELECT 1 
+                    FROM clientes 
+                    WHERE nombre = @Nombre AND id_usuario = @UsuarioId
+                ) as ItemExists";
 
-            // 🔧 OPTIMIZACIÓN: Dapper maneja GUIDs nativamente
             var exists = await connection.ExecuteScalarAsync<bool>(
-     new CommandDefinition(sql,
-           new { Nombre = nombre.Value, UsuarioId = usuarioId.Value },
-      cancellationToken: cancellationToken));
+                new CommandDefinition(sql,
+                    new { Nombre = nombre.Value, UsuarioId = usuarioId.Value },
+                    cancellationToken: cancellationToken));
 
             return exists;
         }
@@ -122,23 +125,21 @@ namespace AhorroLand.Infrastructure.Persistence.Data.Clientes
         {
             using var connection = _dbConnectionFactory.CreateConnection();
 
-            // 🚀 OPTIMIZACIÓN: EXISTS es más rápido que COUNT
             const string sql = @"
                 SELECT EXISTS(
-             SELECT 1 
-   FROM clientes 
-   WHERE nombre = @Nombre 
-AND id_usuario = @UsuarioId 
-   AND id != @ExcludeId
-     ) as Exists";
+                    SELECT 1 
+                    FROM clientes 
+                    WHERE nombre = @Nombre 
+                        AND id_usuario = @UsuarioId 
+                        AND id != @ExcludeId
+                ) as ItemExists";
 
-     // 🔧 OPTIMIZACIÓN: Dapper maneja GUIDs nativamente
-     var exists = await connection.ExecuteScalarAsync<bool>(
-  new CommandDefinition(sql,
-     new { Nombre = nombre.Value, UsuarioId = usuarioId.Value, ExcludeId = excludeId },
-    cancellationToken: cancellationToken));
+            var exists = await connection.ExecuteScalarAsync<bool>(
+                new CommandDefinition(sql,
+                    new { Nombre = nombre.Value, UsuarioId = usuarioId.Value, ExcludeId = excludeId },
+                    cancellationToken: cancellationToken));
 
-    return exists;
+            return exists;
         }
     }
 }

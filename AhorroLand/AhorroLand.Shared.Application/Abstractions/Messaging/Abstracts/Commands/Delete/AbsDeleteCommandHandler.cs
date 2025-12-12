@@ -12,8 +12,7 @@ namespace AhorroLand.Shared.Application.Abstractions.Messaging.Abstracts.Command
     /// <summary>
     /// Handler genérico para eliminar entidades.
     /// ✅ OPTIMIZADO: Crea un stub de la entidad con solo el ID para DELETE directo.
-    /// No carga la entidad completa ni valida existencia (EF Core lanzará DbUpdateConcurrencyException si no existe).
-    /// 🔥 NUEVO: Permite sobrescribir comportamiento para disparar eventos de dominio.
+    /// 🔥 ROLLBACK AUTOMÁTICO: Si la eliminación falla, se hace rollback de la transacción.
     /// </summary>
     public abstract class DeleteCommandHandler<TEntity, TId, TCommand>
         : AbsCommandHandler<TEntity, TId>, IRequestHandler<TCommand, Result>
@@ -22,49 +21,90 @@ namespace AhorroLand.Shared.Application.Abstractions.Messaging.Abstracts.Command
         where TId : IGuidValueObject
     {
         public DeleteCommandHandler(
-             IUnitOfWork unitOfWork,
-      IWriteRepository<TEntity, TId> writeRepository,
+            IUnitOfWork unitOfWork,
+            IWriteRepository<TEntity, TId> writeRepository,
             ICacheService cacheService,
             IUserContext userContext)
-        : base(unitOfWork, writeRepository, cacheService, userContext)
+            : base(unitOfWork, writeRepository, cacheService, userContext)
         {
-     }
+        }
 
         public async Task<Result> Handle(TCommand command, CancellationToken cancellationToken)
         {
             try
             {
-                // 🔥 NUEVO: Permitir que clases derivadas carguen la entidad real si necesitan eventos
+                // 🔥 Permitir que clases derivadas carguen la entidad real si necesitan eventos
                 var entity = await LoadEntityForDeletionAsync(command.Id, cancellationToken);
 
                 if (entity == null)
                 {
-                    return Result.Failure(Error.NotFound($"Entidad {typeof(TEntity).Name} con ID '{command.Id}' no encontrada para eliminación."));
+                    return Result.Failure(Error.NotFound(
+                        $"Entidad {typeof(TEntity).Name} con ID '{command.Id}' no encontrada para eliminación."));
                 }
 
-                // Persistencia: Eliminar, SaveChanges y Cache Invalidation (incluye versionado)
+                // 🔥 NUEVO: Validar si la entidad puede ser eliminada (lógica de dominio)
+                var canDeleteResult = CanDelete(entity);
+
+                if (canDeleteResult.IsFailure)
+                {
+                    // Si no se puede eliminar (ej: tiene registros dependientes), retornar error
+                    return canDeleteResult;
+                }
+
+                // Persistencia: Eliminar, SaveChanges y Cache Invalidation
                 var result = await DeleteAsync(entity, cancellationToken);
 
-                return result;
+                if (result.IsFailure)
+                {
+                    // El UnitOfWork hará rollback automáticamente
+                    return result;
+                }
+
+                return Result.Success();
             }
             catch (DbUpdateConcurrencyException)
             {
                 // Si la entidad no existe, EF Core lanza DbUpdateConcurrencyException
-                return Result.Failure(Error.NotFound($"Entidad {typeof(TEntity).Name} con ID '{command.Id}' no encontrada para eliminación."));
+                return Result.Failure(Error.NotFound(
+                    $"Entidad {typeof(TEntity).Name} con ID '{command.Id}' no encontrada para eliminación."));
+            }
+            catch (DbUpdateException ex)
+            {
+                // 🔥 Capturar violaciones de foreign key u otros errores de BD
+                // El UnitOfWork hará rollback automáticamente
+                var errorMessage = ex.InnerException?.Message ?? ex.Message;
+                return Result.Failure(Error.Conflict(
+                    $"No se puede eliminar porque tiene registros relacionados. Detalle: {errorMessage}"));
+            }
+            catch (Exception ex)
+            {
+                // 🔥 Capturar cualquier otro error inesperado
+                // El UnitOfWork hará rollback automáticamente
+                return Result.Failure(Error.Failure(
+                    "Database.Error",
+                    "Error de base de datos",
+                    ex.Message));
             }
         }
 
         /// <summary>
-        /// 🔥 NUEVO: Método virtual que permite a clases derivadas cargar la entidad real
+        /// 🔥 NUEVO: Método virtual para validar si la entidad puede ser eliminada.
+        /// Override para implementar validaciones de negocio antes de eliminar.
+        /// </summary>
+        protected virtual Result CanDelete(TEntity entity)
+        {
+            // Por defecto, siempre se puede eliminar
+            return Result.Success();
+        }
+
+        /// <summary>
+        /// Método virtual que permite a clases derivadas cargar la entidad real
         /// en lugar de usar un stub. Útil cuando se necesita disparar eventos de dominio.
         /// Por defecto, crea un stub optimizado sin acceso a BD.
         /// </summary>
         protected virtual Task<TEntity?> LoadEntityForDeletionAsync(Guid id, CancellationToken cancellationToken)
         {
-            // 2. Creamos el stub sincrónicamente
             var entityStub = CreateEntityStub(id);
-
-            // 3. Devolvemos el objeto envuelto en una Task completada
             return Task.FromResult<TEntity?>(entityStub);
         }
 
@@ -77,15 +117,15 @@ namespace AhorroLand.Shared.Application.Abstractions.Messaging.Abstracts.Command
             // Usar Activator para crear instancia sin constructor público
             var entity = (TEntity)Activator.CreateInstance(typeof(TEntity), true)!;
 
-            // 🔥 FIX: Convertir Guid a TId (Value Object) usando CreateFromDatabase
+            // Convertir Guid a TId (Value Object) usando CreateFromDatabase
             var idType = typeof(TId);
             var createFromDatabaseMethod = idType.GetMethod("CreateFromDatabase",
-            System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static);
+                System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static);
 
             if (createFromDatabaseMethod == null)
             {
                 throw new InvalidOperationException(
-              $"El tipo {idType.Name} debe tener un método estático 'CreateFromDatabase(Guid value)'");
+                    $"El tipo {idType.Name} debe tener un método estático 'CreateFromDatabase(Guid value)'");
             }
 
             // Invocar CreateFromDatabase(id) para obtener el Value Object

@@ -1,8 +1,8 @@
 ﻿using AhorroLand.Domain;
 using AhorroLand.Shared.Application.Abstractions.Messaging.Abstracts.Commands;
 using AhorroLand.Shared.Application.Abstractions.Servicies;
-using AhorroLand.Shared.Application.Dtos;
 using AhorroLand.Shared.Application.Interfaces;
+using AhorroLand.Shared.Domain.Abstractions.Results;
 using AhorroLand.Shared.Domain.Interfaces;
 using AhorroLand.Shared.Domain.Interfaces.Repositories;
 using AhorroLand.Shared.Domain.ValueObjects;
@@ -12,23 +12,58 @@ namespace AhorroLand.Application.Features.Cuentas.Commands;
 
 public sealed class CreateCuentaCommandHandler : AbsCreateCommandHandler<Cuenta, CuentaId, CreateCuentaCommand>
 {
+    private readonly ICuentaWriteRepository _cuentaWriteRepository;
+
     public CreateCuentaCommandHandler(
-    IUnitOfWork unitOfWork,
-    IWriteRepository<Cuenta, CuentaId> writeRepository,
-    ICacheService cacheService,
-    IUserContext userContext)
-    : base(unitOfWork, writeRepository, cacheService, userContext)
+        IUnitOfWork unitOfWork,
+        IWriteRepository<Cuenta, CuentaId> writeRepository,
+        ICacheService cacheService,
+        IUserContext userContext,
+        ICuentaWriteRepository cuentaWriteRepository)
+        : base(unitOfWork, writeRepository, cacheService, userContext)
     {
+        _cuentaWriteRepository = cuentaWriteRepository;
     }
 
     protected override Cuenta CreateEntity(CreateCuentaCommand command)
     {
         var nombreVO = Nombre.Create(command.Nombre).Value;
-        var saldoVO = Cantidad.Create(command.Saldo).Value;
+        var saldoInicialVO = Cantidad.Create(command.Saldo).Value;
         var usuarioId = UsuarioId.Create(command.UsuarioId).Value;
 
-        var newCuenta = Cuenta.Create(nombreVO, saldoVO, usuarioId);
+        var newCuenta = Cuenta.Create(nombreVO, saldoInicialVO, usuarioId);
+
         return newCuenta;
+    }
+
+    public override async Task<Result<Guid>> Handle(CreateCuentaCommand command, CancellationToken cancellationToken)
+    {
+        // 1. Crear la entidad
+        var entity = CreateEntity(command);
+
+        try
+        {
+            // 2. Validar y agregar al contexto
+            Result validationResult = await _cuentaWriteRepository.CreateAsyncWithValidation(entity, cancellationToken);
+
+            if (validationResult.IsFailure)
+            {
+                return Result.Failure<Guid>(validationResult.Error);
+            }
+
+            // 3. Guardar cambios
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+            // 4. Retornar el ID
+            return Result.Success(entity.Id.Value);
+        }
+        catch (Exception ex)
+        {
+            return Result.Failure<Guid>(Error.Failure(
+                "Database.Error",
+                "Error inesperado al crear cuenta",
+                ex.Message));
+        }
     }
 }
 

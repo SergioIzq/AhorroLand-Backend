@@ -41,7 +41,7 @@ namespace AhorroLand.Infrastructure.Persistence.Command.Configurations.Configura
            .IsRequired()
              .HasConversion(
           proveedorId => proveedorId.Value,
-                  value =>  ProveedorId.CreateFromDatabase(value));
+                  value => ProveedorId.CreateFromDatabase(value));
 
             builder.Property(e => e.PersonaId)
                .HasColumnName("id_persona")

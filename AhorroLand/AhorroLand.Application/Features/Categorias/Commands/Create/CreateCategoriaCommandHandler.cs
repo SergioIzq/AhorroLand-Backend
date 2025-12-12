@@ -2,6 +2,7 @@
 using AhorroLand.Shared.Application.Abstractions.Messaging.Abstracts.Commands;
 using AhorroLand.Shared.Application.Abstractions.Servicies;
 using AhorroLand.Shared.Application.Interfaces;
+using AhorroLand.Shared.Domain.Abstractions.Results;
 using AhorroLand.Shared.Domain.Interfaces;
 using AhorroLand.Shared.Domain.Interfaces.Repositories;
 using AhorroLand.Shared.Domain.ValueObjects;
@@ -15,13 +16,16 @@ namespace AhorroLand.Application.Features.Categorias.Commands;
 public sealed class CreateCategoriaCommandHandler
     : AbsCreateCommandHandler<Categoria, CategoriaId, CreateCategoriaCommand>
 {
+    private readonly ICategoriaWriteRepository _categoriaWriteRepository;
     public CreateCategoriaCommandHandler(
         IUnitOfWork unitOfWork,
         IWriteRepository<Categoria, CategoriaId> writeRepository,
         ICacheService cacheService,
-        IUserContext userContext)
+        IUserContext userContext,
+        ICategoriaWriteRepository categoriaWriteRepository)
         : base(unitOfWork, writeRepository, cacheService, userContext)
     {
+        _categoriaWriteRepository = categoriaWriteRepository;
     }
 
     /// <summary>
@@ -43,5 +47,35 @@ public sealed class CreateCategoriaCommandHandler
         );
 
         return newCategoria;
+    }
+
+    public override async Task<Result<Guid>> Handle(CreateCategoriaCommand command, CancellationToken cancellationToken)
+    {
+        // 1. Crear la entidad
+        var entity = CreateEntity(command);
+
+        try
+        {
+            // 2. Validar y agregar al contexto
+            Result validationResult = await _categoriaWriteRepository.CreateAsyncWithValidation(entity, cancellationToken);
+
+            if (validationResult.IsFailure)
+            {
+                return Result.Failure<Guid>(validationResult.Error);
+            }
+
+            // 3. Guardar cambios
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+            // 4. Retornar el ID
+            return Result.Success(entity.Id.Value);
+        }
+        catch (Exception ex)
+        {
+            return Result.Failure<Guid>(Error.Failure(
+                "Database.Error",
+                "Error inesperado al crear categoría",
+                ex.Message));
+        }
     }
 }

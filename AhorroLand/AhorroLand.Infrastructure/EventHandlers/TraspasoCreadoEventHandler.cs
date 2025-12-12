@@ -22,75 +22,75 @@ public sealed class TraspasoCreadoEventHandler : INotificationHandler<TraspasoCr
         IWriteRepository<Cuenta, CuentaId> cuentaRepository,
      IUnitOfWork unitOfWork,
      ILogger<TraspasoCreadoEventHandler> logger)
- {
+    {
         _cuentaRepository = cuentaRepository;
-     _unitOfWork = unitOfWork;
-  _logger = logger;
+        _unitOfWork = unitOfWork;
+        _logger = logger;
     }
 
     public async Task Handle(TraspasoCreadoEvent notification, CancellationToken cancellationToken)
     {
-    try
-      {
+        try
+        {
             // 1. Obtener cuenta origen
-  var cuentaOrigen = await _cuentaRepository.GetByIdAsync(notification.CuentaOrigenId.Value, cancellationToken);
+            var cuentaOrigen = await _cuentaRepository.GetByIdAsync(notification.CuentaOrigenId.Value, cancellationToken);
 
-      if (cuentaOrigen == null)
-  {
-     _logger.LogWarning(
-        "No se encontró la cuenta origen {CuentaOrigenId} para traspaso {TraspasoId}",
-   notification.CuentaOrigenId,
-  notification.TraspasoId);
-      return;
-   }
+            if (cuentaOrigen == null)
+            {
+                _logger.LogWarning(
+                   "No se encontró la cuenta origen {CuentaOrigenId} para traspaso {TraspasoId}",
+              notification.CuentaOrigenId,
+             notification.TraspasoId);
+                return;
+            }
 
-     // 2. Obtener cuenta destino
+            // 2. Obtener cuenta destino
             var cuentaDestino = await _cuentaRepository.GetByIdAsync(notification.CuentaDestinoId.Value, cancellationToken);
 
-   if (cuentaDestino == null)
-         {
-  _logger.LogWarning(
-         "No se encontró la cuenta destino {CuentaDestinoId} para traspaso {TraspasoId}",
-      notification.CuentaDestinoId,
-      notification.TraspasoId);
-  return;
-  }
+            if (cuentaDestino == null)
+            {
+                _logger.LogWarning(
+                       "No se encontró la cuenta destino {CuentaDestinoId} para traspaso {TraspasoId}",
+                    notification.CuentaDestinoId,
+                    notification.TraspasoId);
+                return;
+            }
 
-      // 3. Retirar de cuenta origen
-      cuentaOrigen.Retirar(notification.Importe);
-         _cuentaRepository.Update(cuentaOrigen);
+            // 3. Retirar de cuenta origen
+            cuentaOrigen.Retirar(notification.Importe);
+            _cuentaRepository.Update(cuentaOrigen);
 
-   // 4. Depositar en cuenta destino
-     cuentaDestino.Depositar(notification.Importe);
-       _cuentaRepository.Update(cuentaDestino);
+            // 4. Depositar en cuenta destino
+            cuentaDestino.Depositar(notification.Importe);
+            _cuentaRepository.Update(cuentaDestino);
 
-    // 5. Guardar cambios
-         await _unitOfWork.SaveChangesAsync(cancellationToken);
+            // 5. Guardar cambios
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-  _logger.LogInformation(
-    "Saldo actualizado por traspaso {TraspasoId}: Cuenta origen {CuentaOrigen} -{Importe} ? Cuenta destino {CuentaDestino} +{Importe}",
-     notification.TraspasoId,
-  notification.CuentaOrigenId,
-  notification.Importe.Valor,
-     notification.CuentaDestinoId,
-     notification.Importe.Valor);
-  }
+            _logger.LogInformation(
+              "Saldo actualizado por traspaso {TraspasoId}: Cuenta origen {CuentaOrigen} -{Importe} ? Cuenta destino {CuentaDestino} +{Importe}",
+               notification.TraspasoId,
+            notification.CuentaOrigenId,
+            notification.Importe.Valor,
+               notification.CuentaDestinoId,
+               notification.Importe.Valor);
+        }
         catch (InvalidOperationException ex)
         {
-   // Saldo insuficiente en cuenta origen
- _logger.LogError(ex,
-     "Saldo insuficiente en cuenta origen {CuentaOrigenId} para traspaso {TraspasoId} por {Importe}",
-      notification.CuentaOrigenId,
-    notification.TraspasoId,
-    notification.Importe.Valor);
-         throw;
-   }
-      catch (Exception ex)
-      {
-          _logger.LogError(ex,
-            "Error al actualizar saldos por traspaso {TraspasoId}",
-         notification.TraspasoId);
-   throw;
-  }
+            // Saldo insuficiente en cuenta origen
+            _logger.LogError(ex,
+                "Saldo insuficiente en cuenta origen {CuentaOrigenId} para traspaso {TraspasoId} por {Importe}",
+                 notification.CuentaOrigenId,
+               notification.TraspasoId,
+               notification.Importe.Valor);
+            throw;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex,
+              "Error al actualizar saldos por traspaso {TraspasoId}",
+           notification.TraspasoId);
+            throw;
+        }
     }
 }

@@ -14,9 +14,9 @@ namespace AhorroLand.Infrastructure.EventHandlers;
 /// </summary>
 public sealed class IngresoEliminadoEventHandler : INotificationHandler<IngresoEliminadoEvent>
 {
-  private readonly IWriteRepository<Cuenta, CuentaId> _cuentaRepository;
+    private readonly IWriteRepository<Cuenta, CuentaId> _cuentaRepository;
     private readonly IUnitOfWork _unitOfWork;
-  private readonly ILogger<IngresoEliminadoEventHandler> _logger;
+    private readonly ILogger<IngresoEliminadoEventHandler> _logger;
 
     public IngresoEliminadoEventHandler(
         IWriteRepository<Cuenta, CuentaId> cuentaRepository,
@@ -24,32 +24,32 @@ public sealed class IngresoEliminadoEventHandler : INotificationHandler<IngresoE
   ILogger<IngresoEliminadoEventHandler> logger)
     {
         _cuentaRepository = cuentaRepository;
-     _unitOfWork = unitOfWork;
-    _logger = logger;
+        _unitOfWork = unitOfWork;
+        _logger = logger;
     }
 
     public async Task Handle(IngresoEliminadoEvent notification, CancellationToken cancellationToken)
     {
-    try
+        try
         {
-    // 1. Obtener la cuenta
-   var cuenta = await _cuentaRepository.GetByIdAsync(notification.CuentaId.Value, cancellationToken);
+            // 1. Obtener la cuenta
+            var cuenta = await _cuentaRepository.GetByIdAsync(notification.CuentaId.Value, cancellationToken);
 
-if (cuenta == null)
-       {
-  _logger.LogWarning(
-        "No se encontró la cuenta {CuentaId} para revertir ingreso eliminado {IngresoId}",
-     notification.CuentaId,
-   notification.IngresoId);
-     return;
+            if (cuenta == null)
+            {
+                _logger.LogWarning(
+                      "No se encontró la cuenta {CuentaId} para revertir ingreso eliminado {IngresoId}",
+                   notification.CuentaId,
+                 notification.IngresoId);
+                return;
             }
 
-// 2. Retirar el importe (revertir el depósito que se hizo al crear el ingreso)
+            // 2. Retirar el importe (revertir el depósito que se hizo al crear el ingreso)
             cuenta.Retirar(notification.Importe);
 
-       // 3. Marcar como modificado y guardar
-_cuentaRepository.Update(cuenta);
-       await _unitOfWork.SaveChangesAsync(cancellationToken);
+            // 3. Marcar como modificado y guardar
+            _cuentaRepository.Update(cuenta);
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
 
             _logger.LogInformation(
   "Saldo revertido: Cuenta {CuentaId} - {Importe} por eliminación de ingreso {IngresoId}",
@@ -58,19 +58,19 @@ _cuentaRepository.Update(cuenta);
   notification.IngresoId);
         }
         catch (InvalidOperationException ex)
-  {
-    _logger.LogError(ex,
-    "Saldo insuficiente al eliminar ingreso {IngresoId}",
-  notification.IngresoId);
- throw;
-     }
+        {
+            _logger.LogError(ex,
+            "Saldo insuficiente al eliminar ingreso {IngresoId}",
+          notification.IngresoId);
+            throw;
+        }
         catch (Exception ex)
-      {
-   _logger.LogError(ex,
-     "Error al revertir saldo de cuenta {CuentaId} por eliminación de ingreso {IngresoId}",
-   notification.CuentaId,
- notification.IngresoId);
-  throw;
-   }
+        {
+            _logger.LogError(ex,
+              "Error al revertir saldo de cuenta {CuentaId} por eliminación de ingreso {IngresoId}",
+            notification.CuentaId,
+          notification.IngresoId);
+            throw;
+        }
     }
 }

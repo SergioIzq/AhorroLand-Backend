@@ -10,7 +10,8 @@ namespace AhorroLand.Shared.Application.Abstractions.Messaging.Abstracts.Command
 
 /// <summary>
 /// Handler genérico para crear entidades. 
-/// Maneja la creación del objeto de dominio, persistencia y retorno del ID.
+/// 🔥 MODIFICADO: Maneja validaciones de dominio con Result en lugar de excepciones.
+/// 🔥 ROLLBACK AUTOMÁTICO: Si CreateEntity falla, no se persiste nada.
 /// </summary>
 public abstract class AbsCreateCommandHandler<TEntity, TId, TCommand>
     : AbsCommandHandler<TEntity, TId>, IRequestHandler<TCommand, Result<Guid>>
@@ -28,33 +29,38 @@ public abstract class AbsCreateCommandHandler<TEntity, TId, TCommand>
     }
 
     /// <summary>
-    /// Método abstracto: El hijo debe saber cómo instanciar la entidad (new TEntity(...))
+    /// Método abstracto: El hijo debe saber cómo instanciar la entidad.
+    /// 🔥 CAMBIO IMPORTANTE: Ahora devuelve Result<TEntity> en lugar de TEntity directo.
     /// </summary>
     protected abstract TEntity CreateEntity(TCommand command);
 
     public virtual async Task<Result<Guid>> Handle(TCommand command, CancellationToken cancellationToken)
     {
-        TEntity entity;
+        // 1. 🔥 NUEVO: Crear entidad con Result (sin try-catch, sin excepciones)
+        var entity = CreateEntity(command);
 
-        // 1. Lógica de Dominio: Instanciar la entidad
-        // Capturamos errores de validación de Value Objects (ej. ArgumentException)
+        // 2. 🔥 Persistencia con rollback automático si falla
         try
         {
-            entity = CreateEntity(command);
+            var result = await CreateAsync(entity, cancellationToken);
+
+            if (result.IsFailure)
+            {
+                // Si CreateAsync falla, el UnitOfWork hará rollback automáticamente
+                return result;
+            }
+
+            // 3. Retornar el ID si todo fue exitoso
+            return result;
         }
-        catch (Exception ex) when (ex is ArgumentException || ex is InvalidOperationException)
+        catch (Exception ex)
         {
-            return Result.Failure<Guid>(
-                Error.Validation(ex.Message) // Devuelve 400 Bad Request
-            );
+            // 🔥 Capturar errores de BD (violación de constraint, timeout, etc.)
+            // El UnitOfWork hará rollback automáticamente
+            return Result.Failure<Guid>(Error.Failure(
+                "Database.Error",
+                "Error de base de datos",
+                ex.Message));
         }
-
-        // 2. Persistencia: Usar el método base (incluye invalidación de caché con versionado)
-        // Si hay error de BD (Unique Constraint), el Middleware devuelve 409 Conflict
-        var result = await CreateAsync(entity, cancellationToken);
-
-        // 3. Retorno
-        // CreateAsync ya devuelve Result<Guid>, así que lo pasamos directamente.
-        return result;
     }
 }

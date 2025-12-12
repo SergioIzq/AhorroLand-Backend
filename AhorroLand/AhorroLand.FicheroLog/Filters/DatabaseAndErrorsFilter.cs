@@ -1,4 +1,3 @@
-using Microsoft.Extensions.Logging;
 using Serilog.Events;
 
 namespace AhorroLand.FicheroLog.Filters;
@@ -61,7 +60,7 @@ public sealed class DatabaseAndErrorsFilter
         // Verificar si hay propiedades relacionadas con operaciones de BD
         foreach (var property in logEvent.Properties)
         {
-            if (ContainsDatabaseKeyword(property.Key) || 
+            if (ContainsDatabaseKeyword(property.Key) ||
                 ContainsDatabaseKeyword(property.Value.ToString()))
             {
                 return true;
@@ -78,7 +77,7 @@ public sealed class DatabaseAndErrorsFilter
             return false;
         }
 
-        return DatabaseKeywords.Any(keyword => 
+        return DatabaseKeywords.Any(keyword =>
             text.Contains(keyword, StringComparison.OrdinalIgnoreCase));
     }
 }

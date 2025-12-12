@@ -36,7 +36,7 @@ namespace AhorroLand.Infrastructure.Persistence.Command.Configurations.Configura
                 .IsRequired()
                 .HasConversion(
                     usuarioId => usuarioId.Value,        // Value Object -> DB
-                    value =>    UsuarioId.CreateFromDatabase(value));      // DB -> Value Object
+                    value => UsuarioId.CreateFromDatabase(value));      // DB -> Value Object
 
             builder.Property(e => e.FechaCreacion)
                 .HasColumnName("fecha_creacion")

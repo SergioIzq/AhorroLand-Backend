@@ -18,7 +18,7 @@
         public Guid CuentaDestinoId { get; init; }
         public string CuentaDestinoNombre { get; init; } = string.Empty;
         public Guid UsuarioId { get; init; }
-        
+
         // ⭐ PROPIEDADES FALTANTES AÑADIDAS
         public string Frecuencia { get; init; } = string.Empty;
         public bool Activo { get; init; }

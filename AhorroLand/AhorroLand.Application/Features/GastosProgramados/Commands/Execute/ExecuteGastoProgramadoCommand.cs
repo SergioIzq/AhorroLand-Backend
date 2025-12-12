@@ -1,5 +1,4 @@
 ﻿using AhorroLand.Shared.Application.Abstractions.Messaging;
-using AhorroLand.Shared.Domain.ValueObjects.Ids;
 
 namespace AhorroLand.Application.Features.GastosProgramados.Commands.Execute;
 

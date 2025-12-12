@@ -4,11 +4,9 @@ using AhorroLand.Application.Features.Conceptos.Queries.Recent;
 using AhorroLand.Application.Features.Conceptos.Queries.Search;
 using AhorroLand.NuevaApi.Controllers.Base;
 using AhorroLand.Shared.Domain.Abstractions.Results; // Para Error y Result
-using AhorroLand.Shared.Domain.ValueObjects.Ids;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.OutputCaching;
 
 namespace AhorroLand.NuevaApi.Controllers;
 
@@ -25,18 +23,23 @@ public class ConceptosController : AbsController
     /// Obtiene lista paginada de conceptos del usuario autenticado.
     /// </summary>
     [HttpGet]
-    public async Task<IActionResult> GetAll([FromQuery] int page = 1, [FromQuery] int pageSize = 10)
+    public async Task<IActionResult> GetPagedList(
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 10,
+        [FromQuery] string searchTerm = "",
+        [FromQuery] string sortColumn = "",
+        [FromQuery] string sortOrder = "")
     {
-        // 1. Obtener ID del usuario (Seguridad)
+        // ✅ OPTIMIZACIÓN: Usamos el helper de la clase base
         var usuarioId = GetCurrentUserId();
 
         if (usuarioId is null)
         {
+            // Retornamos un 401 usando el formato estandarizado
             return Unauthorized(Result.Failure(Error.Unauthorized("Usuario no autenticado")));
         }
 
-        // 2. Crear query filtrando por usuario
-        var query = new GetConceptosPagedListQuery(page, pageSize)
+        var query = new GetConceptosPagedListQuery(page, pageSize, searchTerm, sortColumn, sortOrder)
         {
             UsuarioId = usuarioId.Value
         };

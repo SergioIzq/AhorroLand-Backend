@@ -35,9 +35,9 @@ public sealed class GetClientesPagedListQueryHandler
          query.UsuarioId.Value,
                        query.Page,
               query.PageSize,
-              null, // searchTerm
-           null, // sortColumn
-          null, // sortOrder
+              query.SearchTerm, // searchTerm
+           query.SortColumn, // sortColumn
+          query.SortOrder, // sortOrder
              cancellationToken);
         }
 
