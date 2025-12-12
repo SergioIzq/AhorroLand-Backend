@@ -1,0 +1,118 @@
+﻿using Kash.Domain;
+using Kash.Infrastructure.Persistence.Query;
+using Kash.Shared.Application.Dtos;
+using Kash.Shared.Domain.ValueObjects;
+using Kash.Shared.Domain.ValueObjects.Ids;
+using Dapper;
+
+namespace Kash.Infrastructure.Persistence.Data.Cuentas;
+
+public class CuentaReadRepository : AbsReadRepository<Cuenta, CuentaDto, CuentaId>, ICuentaReadRepository
+{
+    public CuentaReadRepository(IDbConnectionFactory dbConnectionFactory)
+        : base(dbConnectionFactory, "cuentas")
+    {
+    }
+
+    /// <summary>
+    /// 🔥 Query específico para Cuenta con todas sus columnas.
+    /// </summary>
+    protected override string BuildGetByIdQuery()
+    {
+        return @"
+   SELECT 
+          id as Id,
+       nombre as Nombre,
+saldo as Saldo,
+              id_usuario as UsuarioId,
+         fecha_creacion as FechaCreacion
+      FROM cuentas 
+      WHERE id = @id";
+    }
+
+    /// <summary>
+    /// 🔥 Query para obtener todas las cuentas.
+    /// </summary>
+    protected override string BuildGetAllQuery()
+    {
+        return @"
+      SELECT 
+         id as Id,
+     nombre as Nombre,
+saldo as Saldo,
+       id_usuario as UsuarioId,
+     fecha_creacion as FechaCreacion
+ FROM cuentas";
+    }
+
+    /// <summary>
+    /// 🔥 ORDER BY por nombre ascendente.
+    /// </summary>
+    protected override string GetDefaultOrderBy()
+    {
+        return "ORDER BY nombre ASC";
+    }
+
+    /// <summary>
+    /// 🔥 NUEVO: Define las columnas por las que se puede ordenar.
+    /// </summary>
+    protected override Dictionary<string, string> GetSortableColumns()
+    {
+        return new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+        {
+            { "Nombre", "nombre" },
+            { "FechaCreacion", "fecha_creacion" },
+            {"Saldo", "saldo" }
+      };
+    }
+
+    /// <summary>
+    /// 🔥 NUEVO: Define las columnas en las que se puede buscar.
+    /// </summary>
+    protected override List<string> GetSearchableColumns()
+    {
+        return new List<string>
+   {
+     "nombre",
+     "saldo"
+      };
+    }
+
+    public async Task<bool> ExistsWithSameNameAsync(Nombre nombre, UsuarioId usuarioId, CancellationToken cancellationToken = default)
+    {
+        using var connection = _dbConnectionFactory.CreateConnection();
+
+        const string sql = @"
+            SELECT EXISTS(
+          SELECT 1 
+   FROM cuentas 
+       WHERE nombre = @Nombre AND id_usuario = @UsuarioId
+ ) as ItemExists";
+
+        var exists = await connection.ExecuteScalarAsync<bool>(
+            new CommandDefinition(sql,
+             new { Nombre = nombre.Value, UsuarioId = usuarioId.Value },
+   cancellationToken: cancellationToken));
+
+        return exists;
+    }
+
+    public async Task<bool> ExistsWithSameNameExceptAsync(Nombre nombre, UsuarioId usuarioId, Guid excludeId, CancellationToken cancellationToken = default)
+    {
+        using var connection = _dbConnectionFactory.CreateConnection();
+
+        const string sql = @"
+            SELECT EXISTS(
+                SELECT 1 
+ FROM cuentas 
+     WHERE nombre = @Nombre AND id_usuario = @UsuarioId AND id != @ExcludeId
+            ) as ItemExists";
+
+        var exists = await connection.ExecuteScalarAsync<bool>(
+            new CommandDefinition(sql,
+             new { Nombre = nombre.Value, UsuarioId = usuarioId.Value, ExcludeId = excludeId },
+        cancellationToken: cancellationToken));
+
+        return exists;
+    }
+}

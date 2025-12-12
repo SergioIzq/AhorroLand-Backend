@@ -1,0 +1,39 @@
+﻿using Kash.Shared.Domain.Abstractions.Results;
+
+namespace Kash.Shared.Domain.ValueObjects;
+
+public readonly record struct Nombre
+{
+    public const int MaxLength = 50;
+    public string Value { get; init; }
+
+    [Obsolete("No usar directamente. Utiliza Nombre.Create() para validación o Nombre.CreateFromDatabase() desde infraestructura.", error: true)]
+    public Nombre()
+    {
+        Value = string.Empty;
+    }
+
+    private Nombre(string value)
+    {
+        Value = value;
+    }
+
+    public static Result<Nombre> Create(string value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return Result.Failure<Nombre>(Error.Validation("El nombre es obligatorio."));
+        }
+
+        var trimmedValue = value.Trim();
+
+        if (trimmedValue.Length > MaxLength)
+        {
+            return Result.Failure<Nombre>(Error.Validation($"El nombre no puede exceder los {MaxLength} caracteres."));
+        }
+
+        return Result.Success(new Nombre(trimmedValue));
+    }
+
+    public static Nombre CreateFromDatabase(string value) => new Nombre(value);
+}

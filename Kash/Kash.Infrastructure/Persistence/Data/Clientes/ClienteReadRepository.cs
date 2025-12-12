@@ -1,0 +1,145 @@
+﻿using Kash.Domain;
+using Kash.Infrastructure.Persistence.Query;
+using Kash.Shared.Application.Dtos;
+using Kash.Shared.Domain.ValueObjects;
+using Kash.Shared.Domain.ValueObjects.Ids;
+using Dapper;
+
+namespace Kash.Infrastructure.Persistence.Data.Clientes
+{
+    /// <summary>
+    /// Repositorio de lectura optimizado para Clientes.
+    /// ✅ Incluye filtro por usuario para aprovechar índices de base de datos.
+    /// </summary>
+    public class ClienteReadRepository : AbsReadRepository<Cliente, ClienteDto, ClienteId>, IClienteReadRepository
+    {
+        public ClienteReadRepository(IDbConnectionFactory dbConnectionFactory)
+   : base(dbConnectionFactory, "clientes")
+        {
+        }
+
+        /// <summary>
+        /// 🔥 OPTIMIZADO: Query específico para Cliente con las columnas correctas.
+        /// </summary>
+        protected override string BuildGetByIdQuery()
+        {
+            return @"
+                SELECT 
+                    id as Id,
+                    nombre as Nombre,
+                    id_usuario as UsuarioId,
+                    fecha_creacion as FechaCreacion
+                FROM clientes 
+                WHERE id = @id";
+        }
+
+        /// <summary>
+        /// 🔥 OPTIMIZADO: Query para obtener todos los clientes.
+        /// </summary>
+        protected override string BuildGetAllQuery()
+        {
+            return @"
+                SELECT 
+                    id as Id,
+                    nombre as Nombre,
+                    id_usuario as UsuarioId,
+                    fecha_creacion as FechaCreacion
+                FROM clientes";
+        }
+
+        /// <summary>
+        /// 🔥 OPTIMIZADO: Query base para paginación (sin ORDER BY).
+        /// El ORDER BY se agrega en cada método según el contexto.
+        /// </summary>
+        protected override string BuildGetPagedQuery()
+        {
+            return @"
+                SELECT 
+                    id as Id,
+                    nombre as Nombre,
+                    id_usuario as UsuarioId,
+                    fecha_creacion as FechaCreacion
+                FROM clientes";
+        }
+
+        /// <summary>
+        /// 🔥 OPTIMIZADO: Query de conteo.
+        /// </summary>
+        protected override string BuildCountQuery()
+        {
+            return "SELECT COUNT(*) FROM clientes";
+        }
+
+        /// <summary>
+        /// 🔥 NUEVO: Proporciona el ORDER BY por defecto para paginación sin filtros.
+        /// </summary>
+        protected override string GetDefaultOrderBy()
+        {
+            return "ORDER BY nombre ASC";
+        }
+
+        /// <summary>
+        /// 🔥 NUEVO: Define las columnas por las que se puede ordenar.
+        /// </summary>
+        protected override Dictionary<string, string> GetSortableColumns()
+        {
+            return new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+            {
+                { "Nombre", "nombre" },
+                { "FechaCreacion", "fecha_creacion" }
+            };
+        }
+
+        /// <summary>
+        /// 🔥 NUEVO: Define las columnas en las que se puede buscar.
+        /// ⚠️ NOTA: Ya no es necesario excluir 'id' manualmente, el AbsReadRepository lo hace automáticamente.
+        /// </summary>
+        protected override List<string> GetSearchableColumns()
+        {
+            return new List<string>
+            {
+                "nombre"
+            };
+        }
+
+        public async Task<bool> ExistsWithSameNameAsync(Nombre nombre, UsuarioId usuarioId, CancellationToken cancellationToken = default)
+        {
+            using var connection = _dbConnectionFactory.CreateConnection();
+
+            const string sql = @"
+                SELECT EXISTS(
+                    SELECT 1 
+                    FROM clientes 
+                    WHERE nombre = @Nombre AND id_usuario = @UsuarioId
+                ) as ItemExists";
+
+            var exists = await connection.ExecuteScalarAsync<bool>(
+                new CommandDefinition(sql,
+                    new { Nombre = nombre.Value, UsuarioId = usuarioId.Value },
+                    cancellationToken: cancellationToken));
+
+            return exists;
+        }
+
+        public async Task<bool> ExistsWithSameNameExceptAsync(Nombre nombre, UsuarioId usuarioId, Guid excludeId, CancellationToken cancellationToken = default)
+        {
+            using var connection = _dbConnectionFactory.CreateConnection();
+
+            const string sql = @"
+                SELECT EXISTS(
+                    SELECT 1 
+                    FROM clientes 
+                    WHERE nombre = @Nombre 
+                        AND id_usuario = @UsuarioId 
+                        AND id != @ExcludeId
+                ) as ItemExists";
+
+            var exists = await connection.ExecuteScalarAsync<bool>(
+                new CommandDefinition(sql,
+                    new { Nombre = nombre.Value, UsuarioId = usuarioId.Value, ExcludeId = excludeId },
+                    cancellationToken: cancellationToken));
+
+            return exists;
+        }
+    }
+}
