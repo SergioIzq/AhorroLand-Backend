@@ -1,0 +1,59 @@
+﻿using AhorroLand.Shared.Application.Abstractions.Servicies;
+using AhorroLand.Shared.Domain.Abstractions;
+using AhorroLand.Shared.Domain.Abstractions.Results;
+using AhorroLand.Shared.Domain.Interfaces;
+using AhorroLand.Shared.Domain.Interfaces.Repositories;
+using MediatR;
+
+namespace AhorroLand.Shared.Application.Abstractions.Messaging.Abstracts.Queries;
+
+public abstract class SearchForAutocompleteQueryHandler<TEntity, TDto, TQuery, TId>
+    : AbsQueryHandler<TEntity, TId>, IRequestHandler<TQuery, Result<IEnumerable<TDto>>>
+    where TEntity : AbsEntity<TId>
+    where TQuery : SearchForAutocompleteQuery<TEntity, TDto, TId>
+    where TDto : class
+    where TId : IGuidValueObject
+{
+    protected readonly IReadRepositoryWithDto<TEntity, TDto, TId> _repository;
+
+    protected SearchForAutocompleteQueryHandler(
+        IReadRepositoryWithDto<TEntity, TDto, TId> repository,
+        ICacheService cacheService)
+        : base(cacheService)
+    {
+        _repository = repository;
+    }
+
+    // 🔥 1. Hook virtual para filtros personalizados (igual que en GetRecent)
+    protected virtual Dictionary<string, object>? GetCustomFilters(TQuery query)
+    {
+        return null;
+    }
+
+    public virtual async Task<Result<IEnumerable<TDto>>> Handle(TQuery query, CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(query.SearchTerm))
+        {
+            return Result.Success(Enumerable.Empty<TDto>());
+        }
+
+        if (!query.UsuarioId.HasValue)
+        {
+            return Result.Failure<IEnumerable<TDto>>(
+                Error.Validation("El ID de usuario es requerido para la búsqueda."));
+        }
+
+        // 🔥 2. Obtener filtros personalizados
+        var extraFilters = GetCustomFilters(query);
+
+        // 🔥 3. Pasar extraFilters al repositorio
+        var results = await _repository.SearchForAutocompleteAsync(
+            query.UsuarioId.Value,
+            query.SearchTerm,
+            query.Limit,
+            extraFilters, // <--- Nuevo parámetro
+            cancellationToken);
+
+        return Result.Success(results);
+    }
+}

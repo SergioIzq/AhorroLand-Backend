@@ -1,0 +1,20 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Remove="Features\Personas\Search\**" />
+    <EmbeddedResource Remove="Features\Personas\Search\**" />
+    <None Remove="Features\Personas\Search\**" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\AhorroLand.Domain\AhorroLand.Domain.csproj" />
+    <ProjectReference Include="..\AhorroLand.Shared.Application\AhorroLand.Shared.Application.csproj" />
+  </ItemGroup>
+
+</Project>

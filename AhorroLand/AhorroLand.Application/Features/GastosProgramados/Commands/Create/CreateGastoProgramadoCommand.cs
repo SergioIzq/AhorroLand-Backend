@@ -1,0 +1,21 @@
+﻿using AhorroLand.Domain;
+using AhorroLand.Shared.Application.Abstractions.Messaging.Abstracts.Commands;
+using AhorroLand.Shared.Domain.ValueObjects.Ids;
+
+namespace AhorroLand.Application.Features.GastosProgramados.Commands;
+
+public sealed record CreateGastoProgramadoCommand : AbsCreateCommand<GastoProgramado, GastoProgramadoId>
+{
+    public required decimal Importe { get; init; }
+    public required string Frecuencia { get; init; }
+    public required DateTime? FechaEjecucion { get; init; }
+    public string? Descripcion { get; init; }
+    public required Guid ConceptoId { get; init; }
+    public required string ConceptoNombre { get; init; }
+    public Guid ProveedorId { get; init; }
+    public Guid CategoriaId { get; init; }
+    public Guid PersonaId { get; init; }
+    public required Guid CuentaId { get; init; }
+    public required Guid FormaPagoId { get; init; }
+    public bool Activo { get; set; } = true;
+}
