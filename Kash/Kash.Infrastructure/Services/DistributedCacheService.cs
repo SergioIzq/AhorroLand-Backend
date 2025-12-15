@@ -86,14 +86,23 @@ public class DistributedCacheService : ICacheService
     }
 
     /// <summary>
-    /// ?? NUEVO: Invalida por patrón (no soportado en IDistributedCache estándar).
+    /// ?? LIMITACIÓN: Invalida por patrón (no soportado en IDistributedCache estándar).
     /// Esta implementación no hace nada porque IDistributedCache no soporta pattern matching.
-    /// Usa RedisCacheService si necesitas esta funcionalidad.
+    /// 
+    /// ?? Si necesitas esta funcionalidad:
+    /// 1. Usa Redis con StackExchange.Redis directamente
+    /// 2. O confía en el sistema de versionado de listas que invalida automáticamente
+    /// 
+    /// El sistema de versionado funciona así:
+    /// - Cada lista tiene una clave de versión: "list_version:Entity:UserId"
+    /// - Cuando se hace CUD, se elimina esta clave
+    /// - Al hacer GET, se genera una nueva versión
+    /// - Las claves antiguas quedan huérfanas y expiran naturalmente
     /// </summary>
     public Task InvalidateByPatternAsync(string pattern)
     {
         // IDistributedCache estándar no soporta invalidación por patrón
-        // Si usas MemoryCache, no necesitas esto de todas formas
+        // El sistema de versionado de listas maneja esto automáticamente
         return Task.CompletedTask;
     }
 }

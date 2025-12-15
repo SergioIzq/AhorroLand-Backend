@@ -102,8 +102,9 @@ ILogger? logger = null)
     }
 
     /// <summary>
-    /// 🔥 NUEVO: Invalida caché usando sistema de versionado por usuario.
+    /// 🔥 MEJORADO: Invalida caché usando sistema de versionado por usuario.
     /// Invalida: caché individual de la entidad + versión de lista del usuario.
+    /// El sistema de versionado garantiza que todas las listas se recalculen automáticamente.
     /// </summary>
     protected async Task InvalidateCacheAsync(Guid id)
     {
@@ -116,14 +117,15 @@ ILogger? logger = null)
         _logger?.LogInformation("🗑️ Caché individual invalidado: {CacheKey}", individualKey);
 
         // 2. 🔥 Invalidar versión de lista del usuario
-        // Esto fuerza a que todas las queries de lista/paginación se recalculen
+        // Al eliminar la versión, todas las peticiones futuras generarán una nueva versión
+        // y por tanto buscarán claves de caché nuevas (que no existen), forzando recalcular
         if (_userContext.UserId.HasValue)
         {
             var versionKey = $"list_version:{entityName}:{_userContext.UserId}";
             await _cacheService.RemoveAsync(versionKey);
 
             _logger?.LogInformation("🗑️ Versión de lista invalidada: {VersionKey} para usuario {UserId}",
-         versionKey, _userContext.UserId);
+                versionKey, _userContext.UserId);
         }
         else
         {

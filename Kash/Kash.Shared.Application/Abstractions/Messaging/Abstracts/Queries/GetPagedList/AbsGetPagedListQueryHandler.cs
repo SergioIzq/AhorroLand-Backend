@@ -56,16 +56,17 @@ namespace Kash.Shared.Application.Abstractions.Messaging.Abstracts.Queries
             if (string.IsNullOrEmpty(listVersion))
             {
                 listVersion = Guid.NewGuid().ToString();
-                // 🔥 IMPORTANTE: TTL corto para evitar problemas de sincronización
+                // 🔥 REDUCIDO: TTL más corto para evitar problemas de sincronización (de 5/10 min a 2/3 min)
                 await _cacheService.SetAsync(
                     versionKey,
                     listVersion,
-                    slidingExpiration: TimeSpan.FromMinutes(5),
-                    absoluteExpiration: TimeSpan.FromMinutes(10));
+                    slidingExpiration: TimeSpan.FromMinutes(2),
+                    absoluteExpiration: TimeSpan.FromMinutes(3));
             }
 
             // 2. Construir clave de caché que incluye la versión
-            string cacheKey = $"{typeof(TEntity).Name}:paged:{query.UsuarioId}:{listVersion}:{query.Page}:{query.PageSize}";
+            // 🔥 MEJORADO: Incluir searchTerm, sortColumn y sortOrder en la clave de caché
+            string cacheKey = $"{typeof(TEntity).Name}:paged:{query.UsuarioId}:{listVersion}:{query.Page}:{query.PageSize}:{query.SearchTerm}:{query.SortColumn}:{query.SortOrder}";
 
             // 3. Intentar obtener de caché
             var cachedResult = await _cacheService.GetAsync<PagedList<TDto>>(cacheKey);
@@ -84,8 +85,8 @@ namespace Kash.Shared.Application.Abstractions.Messaging.Abstracts.Queries
                 await _cacheService.SetAsync(
                     cacheKey,
                     customFiltered,
-                    slidingExpiration: TimeSpan.FromMinutes(2),
-                    absoluteExpiration: TimeSpan.FromMinutes(5));
+                    slidingExpiration: TimeSpan.FromMinutes(1),
+                    absoluteExpiration: TimeSpan.FromMinutes(2));
 
                 return Result.Success(customFiltered);
             }
@@ -118,8 +119,8 @@ namespace Kash.Shared.Application.Abstractions.Messaging.Abstracts.Queries
             await _cacheService.SetAsync(
                 cacheKey,
                 pagedDtos,
-                slidingExpiration: TimeSpan.FromMinutes(2),
-                absoluteExpiration: TimeSpan.FromMinutes(5));
+                slidingExpiration: TimeSpan.FromMinutes(1),
+                absoluteExpiration: TimeSpan.FromMinutes(2));
 
             return Result.Success(pagedDtos);
         }
