@@ -6,13 +6,16 @@ on:
       - main
     tags:
       - 'v*.*.*'
+  pull_request:
+    branches:
+      - main
   workflow_dispatch:
 
 env:
   DOCKER_IMAGE: sergioizqdev/ahorroland-backend
-  DOTNET_VERSION: '10.0.x'           # Actualizado a .NET 10
+  DOTNET_VERSION: '10.0.x'
   SOLUTION_PATH: AhorroLand/AhorroLand.sln
-  CONTEXT_PATH: ./AhorroLand         # Asegúrate que esta ruta contenga el .sln y el Dockerfile
+  CONTEXT_PATH: ./AhorroLand
   DOCKERFILE_PATH: ./AhorroLand/Dockerfile
 
 jobs:
@@ -37,18 +40,20 @@ jobs:
 
       - name: Run tests
         run: dotnet test ${{ env.SOLUTION_PATH }} --configuration Release --no-build --verbosity normal
-        continue-on-error: false # Cambiado a false para que si fallan los tests, no despliegue
+        continue-on-error: false
 
   docker-build-and-push:
     name: Build and Push Docker Image
     runs-on: ubuntu-latest
     needs: build-and-test
     
+    # 🔥 ESTA CONDICIÓN ASEGURA QUE NO CORRA EN PRs
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v'))
+    
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      # Necesario para compilar multi-arch (amd64, arm64)
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
 
@@ -82,14 +87,17 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=registry,ref=${{ env.DOCKER_IMAGE }}:buildcache
-          cache-to: type=registry,ref=${{ env.DOCKER_IMAGE }}:buildcache,mode=max
+          # Las comillas aquí previenen errores de parsing con los dos puntos
+          cache-from: 'type=registry,ref=${{ env.DOCKER_IMAGE }}:buildcache'
+          cache-to: 'type=registry,ref=${{ env.DOCKER_IMAGE }}:buildcache,mode=max'
           platforms: linux/amd64,linux/arm64
           build-args: |
             ASPNETCORE_ENVIRONMENT=Production
 
       - name: Image digest
-        run: echo "📦 Image digest: ${{ steps.docker_build.outputs.digest }}"
+        # Usamos '|' para asegurar que YAML interprete esto como un comando y no un mapa
+        run: |
+          echo "📦 Image digest: ${{ steps.docker_build.outputs.digest }}"
 
   notify:
     name: Notify Deployment
