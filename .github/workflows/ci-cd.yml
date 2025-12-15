@@ -59,6 +59,16 @@ jobs:
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      # OPTIMIZACIÓN 1: Caché de paquetes NuGet
+      - name: Cache NuGet packages
+        uses: actions/cache@v3
+        with:
+          path: ~/.nuget/packages
+          # La clave cambia si cambia algún archivo .csproj
+          key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj') }}
+          restore-keys: |
+            ${{ runner.os }}-nuget-
           
       - name: Restore dependencies
         run: dotnet restore ${{ needs.detect-structure.outputs.solution_path }}
@@ -75,6 +85,9 @@ jobs:
     runs-on: ubuntu-latest
     needs: [detect-structure, build-and-test]
     if: github.event_name != 'pull_request'
+    # CORRECCIÓN: Definir outputs para que 'notify' pueda leerlos
+    outputs:
+      tags: ${{ steps.meta.outputs.tags }}
     
     steps:
       - name: Checkout code
@@ -82,6 +95,9 @@ jobs:
         
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
+        with:
+          # Optimización del driver para caché local
+          driver-opts: image=moby/buildkit:buildx-stable-1
         
       - name: Log in to Docker Hub
         uses: docker/login-action@v3
@@ -98,7 +114,8 @@ jobs:
             type=ref,event=branch
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
-            type=sha,prefix={{branch}}-
+            # CORRECCIÓN ERROR TAG: Usar sha estándar (sin prefijo roto)
+            type=sha
             type=raw,value=latest,enable={{is_default_branch}}
             
       - name: Build and push Docker image
@@ -110,9 +127,12 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=registry,ref=${{ env.DOCKER_IMAGE }}:buildcache
-          cache-to: type=registry,ref=${{ env.DOCKER_IMAGE }}:buildcache,mode=max
-          platforms: linux/amd64,linux/arm64
+          # OPTIMIZACIÓN 2: Caché nativa de GitHub (Mucho más rápida que registry)
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          # OPTIMIZACIÓN 3: Solo AMD64 (Quitar arm64 ahorra ~70% del tiempo)
+          platforms: linux/amd64
+          provenance: false
           build-args: |
             ASPNETCORE_ENVIRONMENT=Production
           
@@ -130,4 +150,6 @@ jobs:
         run: |
           echo "✅ Docker image built and pushed successfully!"
           echo "📦 Image: ${{ env.DOCKER_IMAGE }}"
+          # Ahora esto funcionará porque definimos los outputs arriba
+          echo "🏷️ Tags: ${{ needs.docker-build-and-push.outputs.tags }}"
           echo "🚀 Deploy with: docker pull ${{ env.DOCKER_IMAGE }}:latest"
